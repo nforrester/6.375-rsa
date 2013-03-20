@@ -1,0 +1,4 @@
+reports/*.pdf
+reports/*.toc
+reports/*.aux
+reports/*.log
