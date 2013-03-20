@@ -2,3 +2,8 @@ reports/*.pdf
 reports/*.toc
 reports/*.aux
 reports/*.log
+
+reference/*.o
+reference/*.hi
+reference/rsa-haskell
+reference/rsa-libgcrypt
