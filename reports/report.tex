@@ -1,15 +1,38 @@
-\documentclass{article}
+%\documentclass[11pt]{amsart}
+\documentclass[12pt]{article}
+\usepackage[top=0.6in,bottom=.5in,left=.8in,right=.8in]{geometry}
+\usepackage{geometry}                % See geometry.pdf to learn the layout options. There are lots.
+\geometry{letterpaper}                   % ... or a4paper or a5paper or ... 
+%\geometry{landscape}                % Activate for for rotated page geometry
+%\usepackage[parfill]{parskip}    % Activate to begin paragraphs with an empty line rather than an indent
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{epstopdf}
+\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
+\linespread{1.5}
+\title{6.375 Preliminary Project Proposal}
 
-\title{RSA in Bluespec}
-\author{Ariel Anders\\Timur Balbekov\\Neil Forrester}
+\author{Ariel Anders, Timur Balbekov, Neil Forrester}
+
+
+%\date{}                                           % Activate to display a given date or no date
 
 \begin{document}
-
 \maketitle
+%\section{}
+%\subsection{}
+\begin{center}
+Hardware RSA Accelerator
+\end{center}
 
-\tableofcontents
+Our project proposal is implementing the RSA cryptographic algorithm in Bluespec. The benefits of doing this in hardware are higher performance, reduced power usage and size, and cost. Having reusable IP that implements RSA would allow a device manufacturer to skip the inclusion of a processor in a device that requires secure communications, but otherwise wouldn�t need one. 
 
-\section{Hello world}
-Hello world!
+An example application of our preliminary proposal could be an intelligence agencies� covert listening device with the added ability of secure communication through RSA protocol.  Specialized hardware is useful here because the device needs to be small, without excessive power consumption, and the ability to run for long periods of time. 
 
-\end{document}
+Alternatively, suppose you were designing a high performance router to create a secure VPN between remote sites, so that it appears that all the computers at all sites are on the local network. Keeping latency as low as possible, and throughput as high as possible, would be vital. Hardware support for Public Key Cryptography, such as RSA, could play an essential component in developing this router.
+
+The main challenges we foresee in implementing RSA in Bluespec are creating a  multi-precision arithmetic library with support for modulo, exponentiation, and multiplication.  Once those problems are solved, the only remaining issue is writing a sensible interface.
+
+
+
+\end{document}  
