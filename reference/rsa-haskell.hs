@@ -43,13 +43,13 @@ verify PubK{pubN = n, pubE = e} m s = m == powMod s e n
 -- http://en.wikipedia.org/wiki/Modular_exponentiation#Right-to-left_binary_method
 powMod :: Integer -> Integer -> Integer -> Integer
 powMod b e m = pm b e 1
-  where pm _ 0 c = c
-        pm b' e' c =
-          pm (b' * b' `mod` m)
-             (e' `shiftR` 1)
-             $ if ((e' `mod` 2) == 1)
-                 then (c * b' `mod` m)
-                 else c
+  where pm _ 0 c = c                   -- when e == 0, then return c
+        pm b' e' c =                   -- On each iteration:
+          pm (b' * b' `mod` m)         -- bNew = b^2 % m
+             (e' `shiftR` 1)           -- eNew = e >> 1
+             $ if ((e' `mod` 2) == 1)  -- if the low bit of e is 1
+                 then (c * b' `mod` m) --   then cNew = c * b % m
+                 else c                --   else cNew = c
 
 ----------------------------------------------------
 -- The main function, where we read the output of --
