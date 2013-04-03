@@ -1,5 +1,8 @@
-#include "util.h"
+#include <stdio.h>
+#include <stdint.h>
 #include "rsa.h"
+#include "util.h"
+#include <ctype.h>
 
 char *hex_chars = "0123456789abcdef";
 
@@ -15,7 +18,8 @@ int isHexChar(char c) {
 
 // Reads a nibble in hex
 uint8_t readHexChar(char c) {
-  for (uint8_t i = 0; i < 0x10; i++) {
+  uint8_t i;
+  for (i = 0; i < 0x10; i++) {
     if (c == hex_chars[i]) {
       return i;
     }
@@ -59,7 +63,7 @@ int readBigint(FILE *stream, bigint *result) {
     int chunk = 0;
     int bit = 0;
     int nibble;
-    for (i = nchars - 1; i >= 0; i--) {
+    for (int i = nchars - 1; i >= 0; i--) {
       nibble = readHexChar(string[i]);
       result->data[chunk] |= nibble << bit;
       bit += 4;
@@ -74,13 +78,24 @@ int readBigint(FILE *stream, bigint *result) {
 
 // Writes a bigint to stream
 int writeBigint(FILE *stream, bigint a) {
-  int leadingZeros = TRUE;
+  int firstChunk = TRUE;
   for (int i = NCHUNKS - 1; i >= 0; i--) {
-    leadingZeros &= a.data[i] == 0;
-    if (!leadingZeros) {
-      if(0 > fprintf(stream, "%x", a.data[i])) {
-        return FAIL;
+    if (!firstChunk || a.data[i] != 0) {
+      if(firstChunk) {
+        if(0 > fprintf(stream, "%x", a.data[i])) {
+          return FAIL;
+        }
+      } else {
+        if(0 > fprintf(stream, "%0*x", CHUNK_SIZE / 4, a.data[i])) {
+          return FAIL;
+        }
       }
+      firstChunk = FALSE;
+    }
+  }
+  if (firstChunk) {
+    if(0 > fprintf(stream, "0")) {
+      return FAIL;
     }
   }
   return SUCCESS;
