@@ -36,3 +36,43 @@ int equal(bigint a, bigint b) {
   }
   return TRUE;
 }
+
+// result = a << s
+int shiftL(bigint a, unsigned int s, bigint *result) {
+  unsigned int shiftChunks = s / CHUNK_SIZE;
+  unsigned int shiftBits   = s % CHUNK_SIZE;
+
+  for (int i = 0; i < NCHUNKS; i++) {
+    if (i - shiftChunks >= 0) {
+      result->data[i] = a.data[i + shiftChunks];
+      result->data[i] <<= shiftBits;
+      if (i - shiftChunks - 1 >= 0) {
+        result->data[i] |= a.data[i - shiftChunks - 1] >> (CHUNK_SIZE - shiftBits);
+      }
+    } else {
+      result->data[i] = 0;
+    }
+  }
+
+  return SUCCESS;
+}
+
+// result = a >> s
+int shiftR(bigint a, unsigned int s, bigint *result) {
+  unsigned int shiftChunks = s / CHUNK_SIZE;
+  unsigned int shiftBits   = s % CHUNK_SIZE;
+
+  for (int i = 0; i < NCHUNKS; i++) {
+    if (i + shiftChunks < NCHUNKS) {
+      result->data[i] = a.data[i + shiftChunks];
+      result->data[i] >>= shiftBits;
+      if (i + shiftChunks + 1 < NCHUNKS) {
+        result->data[i] |= a.data[i + shiftChunks + 1] << (CHUNK_SIZE - shiftBits);
+      }
+    } else {
+      result->data[i] = 0;
+    }
+  }
+
+  return SUCCESS;
+}

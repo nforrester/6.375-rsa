@@ -11,7 +11,8 @@
 
 #define BI_SIZE 1024
 #define CHUNK_T uint16_t
-#define NCHUNKS BI_SIZE / (sizeof(CHUNK_T))
+#define CHUNK_SIZE sizeof(CHUNK_T)
+#define NCHUNKS BI_SIZE / CHUNK_SIZE
 
 typedef struct bigint {
   CHUNK_T data[NCHUNKS];
