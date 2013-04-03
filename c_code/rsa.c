@@ -68,8 +68,8 @@ int shiftL(bigint a, unsigned int s, bigint *result) {
 
 // result = a >> s
 int shiftR(bigint a, unsigned int s, bigint *result) {
-  unsigned int shiftChunks = s / CHUNK_SIZE;
-  unsigned int shiftBits   = s % CHUNK_SIZE;
+  long shiftChunks = s / CHUNK_SIZE;
+  long shiftBits   = s % CHUNK_SIZE;
 
   for (int i = 0; i < NCHUNKS; i++) {
     if (i + shiftChunks < NCHUNKS) {
