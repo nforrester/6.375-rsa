@@ -9,9 +9,9 @@
 #define TRUE 1
 #define FALSE 0
 
-#define BI_SIZE 1024
+#define BI_SIZE 1024 // must be a multiple of 4
 #define CHUNK_T uint16_t
-#define CHUNK_SIZE sizeof(CHUNK_T)
+#define CHUNK_SIZE sizeof(CHUNK_T) // must be a multiple of 4
 #define NCHUNKS BI_SIZE / CHUNK_SIZE
 
 typedef struct bigint {
