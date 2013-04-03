@@ -6,5 +6,24 @@
 #define SUCCESS 0
 #define FAIL 1
 
-// mult function returns SUCCESS or FAIL 
-int mult(int* a, int a_len, int* b, int b_len, int* res, int* res_len);
+#define BI_SIZE 1024
+#define CHUNK_T uint16_t
+#define NCHUNKS BI_SIZE / (sizeof(CHUNK_T))
+
+typedef struct bigint {
+  CHUNK_T data[NCHUNKS];
+}
+
+// result = a * b % m = (a % m) * (b % m) % m
+int modMultNaive(bigint a, bigint b, bigint m, bigint *result);
+int modMultIlvd(bigint a, bigint b, bigint m, bigint *result);
+int modMultMagic(bigint a, bigint b, bigint m, bigint *result);
+
+// result = a << s
+int shiftL(bigint a, unsigned int s, bigint *result);
+
+// result = a >> s
+int shiftR(bigint a, unsigned int s, bigint *result);
+
+// result = b ^ e % m
+int modExpt(bigint b, bigint e, bigint m, bigint *result);
