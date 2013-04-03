@@ -1,8 +1,20 @@
 #include <stdio.h>
+#include <sys/time.h>
 #include <gpg-error.h>
 
 #define GCRYPT_NO_DEPRECATED
 #include <gcrypt.h>
+
+void timer_start(struct timeval *start) {
+	gettimeofday(start, NULL);
+}
+
+void timer_poll(struct timeval *start) {
+	struct timeval now, diff;
+	gettimeofday(&now, NULL);
+	timersub(&now, start, &diff);
+	fprintf(stderr, "Interval: %d sec %d usec\n", diff.tv_sec, diff.tv_usec);
+}
 
 gcry_sexp_t sexp_new(const char *str) {
 	gcry_error_t error;
@@ -83,10 +95,13 @@ char* encrypt(char *public_key, char *plaintext){
 
 	gcry_sexp_t public_sexp = sexp_new(public_key);
 	gcry_sexp_t r_ciph;
+	struct timeval timer;
+	timer_start(&timer);
 	if ((error = gcry_pk_encrypt(&r_ciph, data, public_sexp))) {
 		printf("Error in gcry_pk_encrypt(): %s\nSource: %s\n", gcry_strerror(error), gcry_strsource(error));
 		exit(1);
 	}
+	timer_poll(&timer);
 
 	return sexp_string(r_ciph);
 }
@@ -97,10 +112,13 @@ char* decrypt(char *private_key, char *ciphertext){
 
 	gcry_sexp_t private_sexp = sexp_new(private_key);
 	gcry_sexp_t r_plain;
+	struct timeval timer;
+	timer_start(&timer);
 	if ((error = gcry_pk_decrypt(&r_plain, data, private_sexp))) {
 		printf("Error in gcry_pk_decrypt(): %s\nSource: %s\n", gcry_strerror(error), gcry_strsource(error));
 		exit(1);
 	}
+	timer_poll(&timer);
 
 	gcry_mpi_t r_mpi = gcry_sexp_nth_mpi(r_plain, 0, GCRYMPI_FMT_USG);
 
@@ -132,10 +150,13 @@ char* sign(char *private_key, char *document){
 
 	gcry_sexp_t private_sexp = sexp_new(private_key);
 	gcry_sexp_t r_sig;
+	struct timeval timer;
+	timer_start(&timer);
 	if ((error = gcry_pk_sign(&r_sig, data, private_sexp))) {
 		printf("Error in gcry_pk_sign(): %s\nSource: %s\n", gcry_strerror(error), gcry_strsource(error));
 		exit(1);
 	}
+	timer_poll(&timer);
 
 	return sexp_string(r_sig);
 }
@@ -160,6 +181,8 @@ short verify(char *public_key, char *document, char *signature){
 
 	gcry_sexp_t public_sexp = sexp_new(public_key);
 	short good_sig = 1;
+	struct timeval timer;
+	timer_start(&timer);
 	if ((error = gcry_pk_verify(sig, data, public_sexp))) {
 		if (gcry_err_code(error) != GPG_ERR_BAD_SIGNATURE) {
 			printf("Error in gcry_pk_verify(): %s\nSource: %s\n", gcry_strerror(error), gcry_strsource(error));
@@ -167,6 +190,7 @@ short verify(char *public_key, char *document, char *signature){
 		}
 		good_sig = 0;
 	}
+	timer_poll(&timer);
 	return good_sig;
 }
 
