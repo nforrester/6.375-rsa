@@ -6,7 +6,7 @@
 
 // result = b ^ e % m
 int modExpt(bigint b, bigint e, bigint m, bigint *result) {
-  bigint zero, bSquared, bTmp;
+  bigint zero, bTmp, rTmp, eTmp;
   clearBigint(&zero);
 
   clearBigint(result);
@@ -14,13 +14,13 @@ int modExpt(bigint b, bigint e, bigint m, bigint *result) {
 
   while (!equal(zero, e)) {
     if (e.data[0] % 2 == 1) {
-      modMult(*result, b, m, result);
+      modMult(*result, b, m, &rTmp);
+      *result = rTmp;
     }
-    modMult(b, b, m, &bSquared);
-    bTmp = b;
-    b = bSquared;
-    bSquared = bTmp;
-    shiftR(e, 2, &e);
+    modMult(b, b, m, &bTmp);
+    b = bTmp;
+    shiftR(e, 2, &eTmp);
+    e = eTmp;
   }
   return SUCCESS;
 }
