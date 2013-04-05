@@ -94,6 +94,10 @@ int main() {
     printf("PASS\n");
   } else {
     printf("FAIL\n");
+    printf("\nn  = ");
+    writeBigint(stdout, n);
+    printf("\npq = ");
+    writeBigint(stdout, pq);
   }
 
   printf("\nAri's silly test\n");
