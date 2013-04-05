@@ -29,6 +29,18 @@ void clearBigint(bigint *a) {
   }
 }
 
+// a = 0xFFFFFFFFFFFFFFFFF... (the maximum possible bigint).
+void bigintMax(bigint *a) {
+  CHUNK_T maxChunk = 0;
+  for (int i = 0; i < CHUNK_SIZE; i++) {
+    maxChunk <<= 1;
+    maxChunk++;
+  }
+  for (int i = 0; i < NCHUNKS; i++) {
+    a->data[i] = maxChunk;
+  }
+}
+
 // a == b
 int equal(bigint a, bigint b) {
   for (int i = 0; i < NCHUNKS; i++) {

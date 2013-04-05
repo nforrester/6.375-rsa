@@ -42,5 +42,8 @@ int equal(bigint a, bigint b);
 // a = 0
 void clearBigint(bigint *a);
 
+// a = 0xFFFFFFFFFFFFFFFFF... (the maximum possible bigint).
+void bigintMax(bigint *a);
+
 // result = a
 void assign(bigint a, bigint *result);
