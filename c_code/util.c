@@ -78,15 +78,20 @@ int readBigint(FILE *stream, bigint *result) {
 
 // Writes a bigint to stream
 int writeBigint(FILE *stream, bigint a) {
+  return writeBIData(stream, a.data, NCHUNKS);
+}
+
+// Writes the data of a bigint to a stream
+int writeBIData(FILE *stream, CHUNK_T *data, size_t nChunks) {
   int firstChunk = TRUE;
-  for (int i = NCHUNKS - 1; i >= 0; i--) {
-    if (!firstChunk || a.data[i] != 0) {
+  for (int i = nChunks - 1; i >= 0; i--) {
+    if (!firstChunk || data[i] != 0) {
       if(firstChunk) {
-        if(0 > fprintf(stream, "%x", a.data[i])) {
+        if(0 > fprintf(stream, "%x", data[i])) {
           return FAIL;
         }
       } else {
-        if(0 > fprintf(stream, "%0*x", CHUNK_SIZE / 4, a.data[i])) {
+        if(0 > fprintf(stream, "%0*x", CHUNK_SIZE / 4, data[i])) {
           return FAIL;
         }
       }

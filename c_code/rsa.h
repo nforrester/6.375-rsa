@@ -25,7 +25,7 @@ int modMultIlvd(bigint a, bigint b, bigint m, bigint *result);
 int modMultMagic(bigint a, bigint b, bigint m, bigint *result);
 
 // whichever implementation is best
-#define modMult modMultDummy
+#define modMult modMultMagic
 
 // result = a << s
 int shiftL(bigint a, unsigned int s, bigint *result);

@@ -7,3 +7,6 @@ reference/*.o
 reference/*.hi
 reference/rsa-haskell
 reference/rsa-libgcrypt
+
+c_code/*.o
+c_code/main
