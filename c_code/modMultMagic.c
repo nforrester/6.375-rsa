@@ -241,33 +241,33 @@ int modMultMagic(bigint a, bigint b, bigint m, bigint *result){
 
   // a % m
   modulo(a, m, &a_tmp);   
-  printf("a mod m = ");
+ /* printf("a mod m = ");
   writeBigint(stdout,a_tmp);
   printf("\n");
-
+*/
   // b % m
   modulo(b, m, &b_tmp);
-  printf("b mod m = ");
+ /* printf("b mod m = ");
   writeBigint(stdout,b_tmp);
   printf("\n");
-
+*/
   mult(a_tmp, b_tmp, &tmp);
-  printf("(a mod m)*(b mod m)= ");
+/*  printf("(a mod m)*(b mod m)= ");
   writeDblbigint(stdout,tmp);
   printf("\n");
-
+*/
   /*for( int i = 0; i < NCHUNKS; i ++){
     result[0].data[i] = (uint16_t)tmp.data[i];
    }
   writeBigint(stdout,result[0]);
   */
   dblmodulo(tmp, m, result);
-  printf("(a mod m)*(b mod m) mod m= ");
-  writeBigint(stdout,result[0]);
-  printf("\n");
+//  printf("(a mod m)*(b mod m) mod m= ");
+ // writeBigint(stdout,result[0]);
+ // printf("\n");
 
   int x=25, y=5;
-  printf("%d/%d=%d\n", x,y, divide(x,y)); 
+  //printf("%d/%d=%d\n", x,y, divide(x,y)); 
 
   return SUCCESS;
 }

@@ -113,8 +113,9 @@ int main() {
   modExpt(c, d, n, &m2);
   printf("\n\nc ^ d mod n = m = ");
   writeBigint(stdout, m2);
+
   printf("\n\nIs the plaintext equal to the deciphered ciphertext? ");
-  if (equal(n, pq)) {
+  if (equal(m,m2)) {
     printf("PASS\n");
   } else {
     printf("FAIL\n");
