@@ -3,6 +3,7 @@
 * This headerfile will define the function interfaces...tbd
 */
 
+#include <stdint.h>
 #define SUCCESS 0
 #define FAIL 1
 
