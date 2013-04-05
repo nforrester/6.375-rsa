@@ -39,7 +39,7 @@ int mult(bigint a, bigint b, dblbigint *result){
            i+1, res_tmp.data[i+1], i, res_tmp.data[i]);
     #endif
     // carry routine
-    res_tmp.data[i+1] += (res_tmp.data[i]) >> 8*sizeof(CHUNK_T); 
+    res_tmp.data[i+1] += (res_tmp.data[i]) >> CHUNK_SIZE; 
 
     // store lower half only
     result[0].data[i] = (uint32_t)(LOWER_MASK &  res_tmp.data[i]);
