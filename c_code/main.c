@@ -124,7 +124,7 @@ int main() {
     writeBigint(stdout, m2);
   }
 
-  printf("\nAri's silly test\n");
+  /*printf("\nAri's silly test\n");
   bigint a =num[3], b = num[8], c=num[7];
   printf("input operands: ");
   writeBigint(stdout,a); printf("\t");
@@ -134,6 +134,6 @@ int main() {
   printf("\n\nresult: \t");
   writeBigint(stdout, tmp);
   printf("\n");
-
+*/
 
 }
