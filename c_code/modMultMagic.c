@@ -75,6 +75,23 @@ int greaterThan (int* a, int* b) {
   return FALSE; // error 
 }
 
+// integer divide return result
+int divide(int a, int b){
+  int res = 0;
+  
+  int dividend = a;
+
+  while(dividend >= 0 ){
+    dividend -= b;
+    res++;
+#ifdef DEBUG
+    printf("dividend = %d\n", dividend);
+#endif
+   }
+   res--;
+   return res;
+}
+
 // a % b = r
 int modulo(bigint a, bigint b, bigint *result){
   int32_t num [NCHUNKS] = {0};
@@ -108,7 +125,7 @@ int modulo(bigint a, bigint b, bigint *result){
     while(num[a_msb]==0  && a_msb>0)a_msb--;
     int offset = a_msb - b_msb;
 
-    q =(int) num[a_msb]/den[b_msb];
+    q =divide(num[a_msb],den[b_msb]);
     if( q == 0) break;   
     #ifdef DEBUG
     printf("q = %x / %x = %x\n", num[a_msb], den[b_msb], q);
@@ -177,7 +194,7 @@ int dblmodulo(dblbigint a, bigint b, bigint *result){
     while(num[a_msb]==0  && a_msb>0)a_msb--;
     int offset = a_msb - b_msb;
 
-    q =(int) num[a_msb]/den[b_msb];
+    q =divide( num[a_msb],den[b_msb]);
     if( q == 0) break;   
     #ifdef DEBUG
     printf("q = %x / %x = %x\n", num[a_msb], den[b_msb], q);
@@ -248,5 +265,9 @@ int modMultMagic(bigint a, bigint b, bigint m, bigint *result){
   printf("(a mod m)*(b mod m) mod m= ");
   writeBigint(stdout,result[0]);
   printf("\n");
+
+  int x=25, y=5;
+  printf("%d/%d=%d\n", x,y, divide(x,y)); 
+
   return SUCCESS;
 }
