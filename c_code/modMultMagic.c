@@ -237,6 +237,7 @@ int modMultMagic(bigint a, bigint b, bigint m, bigint *result){
 
   dblmodulo(tmp, m, result);
   printf("(a mod m)*(b mod m) mod m= ");
+  writeBigint(stdout,result);
   printf("\n");
     
   return SUCCESS;
