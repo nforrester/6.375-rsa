@@ -84,7 +84,9 @@ int divide(int a, int b){
   while(dividend >= 0 ){
     dividend -= b;
     res++;
+#ifdef DEBUG
     printf("dividend = %d\n", dividend);
+#endif
    }
    res--;
    return res;
@@ -123,7 +125,7 @@ int modulo(bigint a, bigint b, bigint *result){
     while(num[a_msb]==0  && a_msb>0)a_msb--;
     int offset = a_msb - b_msb;
 
-    q =(int) num[a_msb]/den[b_msb];
+    q =divide(num[a_msb],den[b_msb]);
     if( q == 0) break;   
     #ifdef DEBUG
     printf("q = %x / %x = %x\n", num[a_msb], den[b_msb], q);
@@ -192,7 +194,7 @@ int dblmodulo(dblbigint a, bigint b, bigint *result){
     while(num[a_msb]==0  && a_msb>0)a_msb--;
     int offset = a_msb - b_msb;
 
-    q =(int) num[a_msb]/den[b_msb];
+    q =divide( num[a_msb],den[b_msb]);
     if( q == 0) break;   
     #ifdef DEBUG
     printf("q = %x / %x = %x\n", num[a_msb], den[b_msb], q);
