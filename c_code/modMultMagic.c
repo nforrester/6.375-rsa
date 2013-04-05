@@ -22,7 +22,7 @@ int mult(bigint a, bigint b, dblbigint *result){
   
   for (i = 0; i < NCHUNKS; i++){
     for(j = 0; j < NCHUNKS; j++){
-      res_tmp.data[i+j] = (uint32_t)a.data[i] * (uint32_t)b.data[j];
+      res_tmp.data[i+j] += (uint32_t)a.data[i] * (uint32_t)b.data[j];
       #ifdef DEBUG
       if(a.data[i]!=0 && b.data[j] != 0)
         printf("res_tmp[%d] = %x * %x = %x\n", 
