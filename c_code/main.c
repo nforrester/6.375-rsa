@@ -100,7 +100,7 @@ int main() {
     writeBigint(stdout, pq);
   }
 
-  printf("\nAri's silly test\n");
+/*  printf("\nAri's silly test\n");
   bigint a =num[8], b = num[8], c=num[9];
   printf("input operands: ");
   writeBigint(stdout,a); printf("\t");
@@ -110,6 +110,6 @@ int main() {
   printf("\n\nresult: \t");
   writeBigint(stdout, tmp);
   printf("\n");
-
+*/
 
 }

@@ -13,16 +13,20 @@ const uint32_t UPPER_MASK=  0xFFFF0000;
 const uint32_t LOWER_MASK = 0x0000FFFF;
 
 typedef struct {
-  uint32_t data[2*NCHUNKS];
+  uint32_t data[2*NCHUNKS + 1];
 } dblbigint;
 
 int mult(bigint a, bigint b, dblbigint *result){
   dblbigint res_tmp = {0};
   int i, j;
+  uint32_t tmp = 0;
   
   for (i = 0; i < NCHUNKS; i++){
     for(j = 0; j < NCHUNKS; j++){
-      res_tmp.data[i+j] += (uint32_t)a.data[i] * (uint32_t)b.data[j];
+      tmp = (uint32_t)a.data[i] * (uint32_t)b.data[j];
+      res_tmp.data[i +j] += LOWER_MASK & tmp;
+      res_tmp.data[i + j + 1] += tmp >> CHUNK_SIZE;
+
       #ifdef DEBUG
       if(a.data[i]!=0 && b.data[j] != 0)
         printf("res_tmp[%d] = %x * %x = %x\n", 
@@ -235,10 +239,14 @@ int modMultMagic(bigint a, bigint b, bigint m, bigint *result){
   writeDblbigint(stdout,tmp);
   printf("\n");
 
+  /*for( int i = 0; i < NCHUNKS; i ++){
+    result[0].data[i] = (uint16_t)tmp.data[i];
+   }
+  writeBigint(stdout,result[0]);
+  */
   dblmodulo(tmp, m, result);
   printf("(a mod m)*(b mod m) mod m= ");
   writeBigint(stdout,result[0]);
   printf("\n");
-    
   return SUCCESS;
 }
