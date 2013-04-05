@@ -75,6 +75,21 @@ int greaterThan (int* a, int* b) {
   return FALSE; // error 
 }
 
+// integer divide return result
+int divide(int a, int b){
+  int res = 0;
+  
+  int dividend = a;
+
+  while(dividend >= 0 ){
+    dividend -= b;
+    res++;
+    printf("dividend = %d\n", dividend);
+   }
+   res--;
+   return res;
+}
+
 // a % b = r
 int modulo(bigint a, bigint b, bigint *result){
   int32_t num [NCHUNKS] = {0};
@@ -248,5 +263,9 @@ int modMultMagic(bigint a, bigint b, bigint m, bigint *result){
   printf("(a mod m)*(b mod m) mod m= ");
   writeBigint(stdout,result[0]);
   printf("\n");
+
+  int x=25, y=5;
+  printf("%d/%d=%d\n", x,y, divide(x,y)); 
+
   return SUCCESS;
 }
