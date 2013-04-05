@@ -203,7 +203,7 @@ int dblmodulo(dblbigint a, bigint b, bigint *result){
   }
       
   for(i = 0; i < NCHUNKS; i++){
-    result[0].data[i] = num[i];
+    result->data[i] = num[i];
     #ifdef DEBUG
     if(num[i]) 
       printf("result[%d]=%d\n",i, num[i]);

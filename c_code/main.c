@@ -54,7 +54,6 @@ int main() {
   readBigint(stream, &q);
   readBigint(stream, &u);
 
-
   printf("\nequal() test: ");
   if (!equal(meaningOfLifeTheUniverseAndEverything, num[5]) &&
        equal(num[7], num[7]) &&
@@ -98,6 +97,31 @@ int main() {
     writeBigint(stdout, n);
     printf("\npq = ");
     writeBigint(stdout, pq);
+  }
+
+  printf("\n\nSHITS AND GIGGLES:\n");
+  bigint m, c, m2;
+  readBigint(stream, &m);
+
+  printf("\nm = ");
+  writeBigint(stdout, m);
+  printf("\n\n");
+  modExpt(m, e, n, &c);
+  printf("\n\nm ^ e mod n = c = ");
+  writeBigint(stdout, c);
+  printf("\n\n");
+  modExpt(c, d, n, &m2);
+  printf("\n\nc ^ d mod n = m = ");
+  writeBigint(stdout, m2);
+  printf("\n\nIs the plaintext equal to the deciphered ciphertext? ");
+  if (equal(n, pq)) {
+    printf("PASS\n");
+  } else {
+    printf("FAIL\n");
+    printf("\nm  = ");
+    writeBigint(stdout, m);
+    printf("\nm2 = ");
+    writeBigint(stdout, m2);
   }
 
 /*  printf("\nAri's silly test\n");
