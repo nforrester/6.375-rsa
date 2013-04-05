@@ -1,5 +1,5 @@
-CC = gcc
-CFLAGS = -std=gnu99
+CC = gcc 
+CFLAGS = -std=gnu99 -g
 
 all: main
 

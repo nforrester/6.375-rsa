@@ -13,6 +13,10 @@ int modExpt(bigint b, bigint e, bigint m, bigint *result) {
   result->data[0] = 1;
 
   while (!equal(zero, e)) {
+   printf("b = ");
+   writeBigint(stdout,b);
+   printf("\n");
+
     if (e.data[0] % 2 == 1) {
       modMult(*result, b, m, &rTmp);
       *result = rTmp;

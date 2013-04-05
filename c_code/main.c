@@ -110,7 +110,7 @@ int main() {
   printf("\n\nm ^ e mod n = c = ");
   writeBigint(stdout, c);
   printf("\n\n");
-  modExpt(c, d, n, &m2);
+//  modExpt(c, d, n, &m2);
   printf("\n\nc ^ d mod n = m = ");
   writeBigint(stdout, m2);
 
