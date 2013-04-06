@@ -119,7 +119,7 @@ int modulo(bigint a, bigint b, bigint *result){
   // begin division routine
   int msb = NCHUNKS-1;
 
-    
+
   for(ptr = 0; ptr < NCHUNKS; ptr++){
     a_msb = NCHUNKS-1;
     while(num[a_msb]==0  && a_msb>0)a_msb--;
@@ -132,7 +132,13 @@ int modulo(bigint a, bigint b, bigint *result){
     #endif
       
     for(i = 0; i < NCHUNKS; i++){
-      tmp[i+offset] = den[i]*q;
+      if (i+offset >= NCHUNKS || i+offset < 0) {
+        printf("WTF   WTF   WTF\n");
+        printf("i+offset = %d\n", i+offset);
+        printf("ABORT ABORT ABORT\n");
+        exit(1);
+      }
+      tmp[i+offset] = den[i]*q; // THIS IS THE FIRST PROBLEM LINE
       if ((i+offset)== (NCHUNKS-1)) break;
       #ifdef DEBUG
       if(tmp[i+offset]) 
@@ -188,7 +194,6 @@ int dblmodulo(dblbigint a, bigint b, bigint *result){
   // begin division routine
   int msb = NCHUNKS-1;
 
-    
   for(ptr = 0; ptr < NCHUNKS; ptr++){
     a_msb = NCHUNKS-1;
     while(num[a_msb]==0  && a_msb>0)a_msb--;
@@ -201,7 +206,13 @@ int dblmodulo(dblbigint a, bigint b, bigint *result){
     #endif
       
     for(i = 0; i < NCHUNKS; i++){
-      tmp[i+offset] = den[i]*q;
+      if (i+offset >= NCHUNKS || i+offset < 0) {
+        printf("WTF   WTF   WTF\n");
+        printf("i+offset = %d\n", i+offset);
+        printf("ABORT ABORT ABORT\n");
+        exit(1);
+      }
+      tmp[i+offset] = den[i]*q; // THIS IS THE SECOND PROBLEM LINE
       if ((i+offset)== (NCHUNKS-1)) break;
       #ifdef DEBUG
       if(tmp[i+offset]) 
