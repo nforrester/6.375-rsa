@@ -81,27 +81,33 @@ int writeBigint(FILE *stream, bigint a) {
   return writeBIData(stream, a.data, NCHUNKS);
 }
 
+#define writeBIDataMacro(fun_name_param, type_param, chunk_size_param) \
+  int fun_name_param(FILE *stream, type_param *data, size_t nChunks) { \
+    int firstChunk = TRUE; \
+    for (int i = nChunks - 1; i >= 0; i--) { \
+      if (!firstChunk || data[i] != 0) { \
+        if(firstChunk) { \
+          if(0 > fprintf(stream, "%x", data[i])) { \
+            return FAIL; \
+          } \
+        } else { \
+          if(0 > fprintf(stream, "%0*x", chunk_size_param / 4, data[i])) { \
+            return FAIL; \
+          } \
+        } \
+        firstChunk = FALSE; \
+      } \
+    } \
+    if (firstChunk) { \
+      if(0 > fprintf(stream, "0")) { \
+        return FAIL; \
+      } \
+    } \
+    return SUCCESS; \
+  }
+
 // Writes the data of a bigint to a stream
-int writeBIData(FILE *stream, CHUNK_T *data, size_t nChunks) {
-  int firstChunk = TRUE;
-  for (int i = nChunks - 1; i >= 0; i--) {
-    if (!firstChunk || data[i] != 0) {
-      if(firstChunk) {
-        if(0 > fprintf(stream, "%x", data[i])) {
-          return FAIL;
-        }
-      } else {
-        if(0 > fprintf(stream, "%0*x", CHUNK_SIZE / 4, data[i])) {
-          return FAIL;
-        }
-      }
-      firstChunk = FALSE;
-    }
-  }
-  if (firstChunk) {
-    if(0 > fprintf(stream, "0")) {
-      return FAIL;
-    }
-  }
-  return SUCCESS;
-}
+writeBIDataMacro(writeBIData, CHUNK_T, CHUNK_SIZE)
+
+// Writes the data of a dblbigint to a stream
+writeBIDataMacro(writeDBIData, uint32_t, CHUNK_SIZE)

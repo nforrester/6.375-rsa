@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include "util.h"
 
-#define DEBUG
+//#define DEBUG
 const uint32_t UPPER_MASK=  0xFFFF0000;
 const uint32_t LOWER_MASK = 0x0000FFFF;
 
@@ -247,7 +247,7 @@ int dblmodulo(dblbigint a, bigint b, bigint *result){
 }
 
 int writeDblbigint(FILE *stream, dblbigint a) {
-  return writeBIData(stream, (CHUNK_T*)a.data, 2 * NCHUNKS);
+  return writeDBIData(stream, a.data, 2 * NCHUNKS);
 }
 
 // result = (a * b )% m = (a % m) * (b % m) % m
@@ -255,12 +255,18 @@ int modMultMagic(bigint a, bigint b, bigint m, bigint *result){
   dblbigint tmp={0};
   bigint a_tmp={0}, b_tmp={0};
 
+  printf("a = ");
+  writeBigint(stdout,a);
+  printf("\n");
   // a % m
   modulo(a, m, &a_tmp);   
   printf("a mod m = ");
   writeBigint(stdout,a_tmp);
   printf("\n");
 
+  printf("b = ");
+  writeBigint(stdout,b);
+  printf("\n");
   // b % m
   modulo(b, m, &b_tmp);
   printf("b mod m = ");
@@ -268,7 +274,7 @@ int modMultMagic(bigint a, bigint b, bigint m, bigint *result){
   printf("\n");
 
   mult(a_tmp, b_tmp, &tmp);
- printf("(a mod m)*(b mod m)= ");
+  printf("(a mod m)*(b mod m)= ");
   writeDblbigint(stdout,tmp);
   printf("\n");
 

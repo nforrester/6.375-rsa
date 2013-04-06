@@ -23,6 +23,9 @@ int writeBigint(FILE *stream, bigint a);
 // Writes the data of a bigint to stream
 int writeBIData(FILE *stream, CHUNK_T *data, size_t nChunks);
 
+// Writes the data of a dblbigint to stream
+int writeDBIData(FILE *stream, uint32_t *data, size_t nChunks);
+
 // returns TRUE if c is in the string "0123456789abcdef"
 int isHexChar(char c);
 
