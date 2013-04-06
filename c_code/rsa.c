@@ -18,6 +18,8 @@ int modExpt(bigint b, bigint e, bigint m, bigint *result) {
   writeBigint(stdout,m);
 
   while (!equal(zero, e)) {
+    printf("enter any char\n");
+    getc(stdin);
     printf("\n\n\n----------- NEW ITERATION -----------");
     printf("\n\nb = ");
     writeBigint(stdout,b);
@@ -28,12 +30,16 @@ int modExpt(bigint b, bigint e, bigint m, bigint *result) {
     printf("\n\n");
 
     if (e.data[0] % 2 == 1) {
-      modMult(*result, b, m, &tmp);
+      printf("odd stuff\n");
+      modMult(*result, b, m, &tmp); // res = res*b % m
       memcpy(result->data, tmp.data, NCHUNKS * sizeof(CHUNK_T));
+      printf("\n\n result from res* b % m is ");
+      writeBigint(stdout,*result);
+	printf("\n");
     }
-    modMult(b, b, m, &tmp);
+    modMult(b, b, m, &tmp); // b = b ^2 % m
     memcpy(b.data, tmp.data, NCHUNKS * sizeof(CHUNK_T));
-    shiftR(e, 2, &tmp);
+    shiftR(e, 2, &tmp); // e >> 2
     memcpy(e.data, tmp.data, NCHUNKS * sizeof(CHUNK_T));
   }
   return SUCCESS;
