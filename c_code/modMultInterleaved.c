@@ -2,50 +2,66 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "util.h"
 
 // Returns bit at x[i]
 int getBit(int i, bigint * x) {
   CHUNK_T bin;
-  bin = x->data[(int) floor((float) i/NCHUNKS)];
+  bin = x->data[i * NCHUNKS / BI_SIZE];
   
-  return (bin >> (i % 16) & 1);
+  return (bin >> (i % CHUNK_SIZE)) & 1;
 }
 
 // Sets bit at x[i] to 1
 void setBit(int i, bigint * x) {
-  x->data[(int) floor((float) i/NCHUNKS)] |= 1 << i;
+  x->data[i * NCHUNKS / BI_SIZE] |= 1 << (i % CHUNK_SIZE);
   return;
 }
 
 // Unsets bit at x[i] to 0
 void unsetBit(int i, bigint * x) {
-  x->data[(int) floor((float) i/NCHUNKS)] &= ~(1 << i);
+  x->data[i * NCHUNKS / BI_SIZE] &= ~(1 << (i % CHUNK_SIZE));
   return;
 }
 
-// Performs bitwise P = P + I in place
-void add_inplace(bigint * P, bigint * I) {
+// Performs bitwise P = P +/- I in place
+int add_sub_inplace(bigint * P, bigint * I, int carry_in, int extra_bits_p) {
   int i;
   int sum = 0;
+  int carry = carry_in;
+  int extra_bits_out;
   
-  for (i = 0; i < NCHUNKS; i++) {
-    sum = getBit(i, P) + getBit(i, I);
+  for (i = 0; i < BI_SIZE; i++) {
+    sum = getBit(i, P) + (carry_in ? (!getBit(i, I)) : getBit(i, I)) + carry;
   
-    if(sum == 0) {
+    if((sum & 1) == 0) {
 	    unsetBit(i, P);
-    } else if(sum < 2) {
-	    setBit(i, P);
     } else {
 	    setBit(i, P);
-	
-  	  if(i == 1023) {
-  		  printf("Sum overflow");
-  		  exit(-1);
-  	  }
-  	
-  	  setBit(i + 1, P);
     }
+
+    carry = (sum & 2) >> 1;
   }
+
+  sum = (extra_bits_p & 1) + carry_in + carry;
+  extra_bits_out = sum & 1;
+  carry = (sum & 2) >> 1;
+	
+  sum = ((extra_bits_p & 2) >> 1) + carry_in + carry;
+  extra_bits_out |= (sum & 1) << 1;
+  carry = (sum & 2) >> 1;
+	
+  if (carry != carry_in) {
+    printf("Sum overflow! carry = %x, extra_bits_out = %x\n", carry, extra_bits_out);
+    printBigint("P = ", *P);
+    exit(-1);
+  }
+  return extra_bits_out;
+}
+
+// Performs bitwise P = P + I in place
+int add_inplace(bigint * P, bigint * I, int extra_bits_p) {
+  return add_sub_inplace(P, I, 0, extra_bits_p);
 }
 
 // Returns true if P >= M
@@ -53,8 +69,10 @@ int strongly_greater(bigint * P, bigint * M){
   int i;
 
   for (i = NCHUNKS-1; i >= 0; i--) {
-    if(getBit(i, P) < getBit(i, M)) {
+    if (P->data[i] < M->data[i]) {
       return 0;
+    } else if (P->data[i] > M->data[i]) {
+      return 1;
     }
   }
   
@@ -62,27 +80,8 @@ int strongly_greater(bigint * P, bigint * M){
 }
 
 // Performs bitwise P = P - M in place
-void sub_inplace(bigint * P, bigint * I) {
-  int i;
-  int sum = 0;
-   
-  for (i = BI_SIZE - 1; i >= 0; i--) {
-    sum = getBit(i, P) + getBit(i, I);
-  if(sum == 0) {
-    unsetBit(i, P);
-  } else if(sum < 2) {
-    setBit(i, P);
-  } else {
-    setBit(i, P);
-  
-    if(i == 1023) {
-      printf("Sum overflow");
-      return;
-    }
-     
-    setBit(i + 1, P);
-  }
- }
+int sub_inplace(bigint * P, bigint * I, int extra_bits_p) {
+  return add_sub_inplace(P, I, 1, extra_bits_p);
 }
 
 int modMultIlvd(bigint a, bigint b, bigint m, bigint *result) {
@@ -95,38 +94,42 @@ int modMultIlvd(bigint a, bigint b, bigint m, bigint *result) {
   bigint I; // ok to leave uninitialized, Xi * Y will initialize
   
   int i, j;
+  int extra_bits_p = 0;
   
   // P = 0
-  for (i = 0; i < NCHUNKS; i++) {
-    P->data[i] = 0;
-  }
+  clearBigint(P);
 
   for (i = BI_SIZE - 1; i >= 0; i--) {
     // P = 2 * P
-    for (j = 0; j < NCHUNKS; j++) {
-      P->data[j] = P->data[j] << 1;
+    extra_bits_p = P->data[NCHUNKS-1] >> (CHUNK_SIZE - 1);
+    for (j = NCHUNKS - 1; j >= 1; j--) {
+      P->data[j] = (P->data[j] << 1) + (P->data[j-1] >> (CHUNK_SIZE - 1));
     }
+    P->data[0] = P->data[0] << 1;
 
     // I = Xi * Y
     for (j = 0; j < NCHUNKS; j++) {
-      I.data[(int) floor((float) j/NCHUNKS)] = Y->data[(int) floor((float) j/NCHUNKS)] * getBit(i, X);
+      I.data[j] = Y->data[j] * getBit(i, X);
     }
     
     // P = P + I
-    for (j = 0; j < NCHUNKS; j++) {
-      add_inplace(P, &I);
-    }    
+    extra_bits_p = add_inplace(P, &I, extra_bits_p);
 
     // if(P >= M) P = P - M;
-    if(strongly_greater(P, M)) {
-      sub_inplace(P, M);
+    if(extra_bits_p || strongly_greater(P, M)) {
+      extra_bits_p = sub_inplace(P, M, extra_bits_p);
     }
    
     // if(P >= M) P = P - M;
-    if(strongly_greater(P, M)) {
-      sub_inplace(P, M);
+    if(extra_bits_p || strongly_greater(P, M)) {
+      extra_bits_p = sub_inplace(P, M, extra_bits_p);
     }
-    
+
+    if(extra_bits_p || strongly_greater(P, M)) {
+      printf("P too big! extra_bits_p = %x\n", extra_bits_p);
+      printBigint("P = ", *P);
+      exit(-1);
+    }
   }
   
   

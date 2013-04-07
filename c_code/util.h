@@ -20,6 +20,8 @@ int readBigint(FILE *stream, bigint *result);
 // Writes a bigint to stream
 int writeBigint(FILE *stream, bigint a);
 
+void printBigint(char *label, bigint a);
+
 // Writes the data of a bigint to stream
 int writeBIData(FILE *stream, CHUNK_T *data, size_t nChunks);
 

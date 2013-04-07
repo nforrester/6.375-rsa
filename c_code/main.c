@@ -46,6 +46,18 @@ int main() {
   bigint meaningOfLifeTheUniverseAndEverything;
   readBigint(stream, &meaningOfLifeTheUniverseAndEverything);
 
+  modMult(num[6], num[7], meaningOfLifeTheUniverseAndEverything, &tmp);
+  printBigint("\nsimple test: 6 * 7 % 42 = ", tmp);
+
+  modMult(num[6], num[9], meaningOfLifeTheUniverseAndEverything, &tmp);
+  printBigint("\nsimple test: 6 * 9 % 42 = ", tmp);
+
+  modMult(num[2], num[3], num[5], &tmp);
+  printBigint("\nsimple test: 2 * 3 % 5 = ", tmp);
+
+  modExpt(num[5], num[3], meaningOfLifeTheUniverseAndEverything, &tmp);
+  printBigint("\nsimple test: 5 ^ 3 % 42 = ", tmp);
+
   bigint n, e, d, p, q, u;
   readBigint(stream, &n);
   readBigint(stream, &e);

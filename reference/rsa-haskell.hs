@@ -3,6 +3,12 @@ import Data.Bits
 import qualified Numeric as N
 import Control.Monad.State
 
+----------------------------------------------------------------------------
+import qualified System.IO.Unsafe as IOU
+printU label x = IOU.unsafePerformIO $ do putStrLn (label ++ (show x)); return x
+printUh label x = IOU.unsafePerformIO $ do putStrLn (label ++ (showHex x)); return x
+----------------------------------------------------------------------------
+
 ---------------------------------------
 -- Here is the implementation of RSA --
 ---------------------------------------
@@ -45,11 +51,31 @@ powMod :: Integer -> Integer -> Integer -> Integer
 powMod b e m = pm b e 1
   where pm _ 0 c = c                   -- when e == 0, then return c
         pm b' e' c =                   -- On each iteration:
-          pm (b' * b' `mod` m)         -- bNew = b^2 % m
-             (e' `shiftR` 1)           -- eNew = e >> 1
-             $ if ((e' `mod` 2) == 1)  -- if the low bit of e is 1
-                 then (c * b' `mod` m) --   then cNew = c * b % m
-                 else c                --   else cNew = c
+          pm (printUh "b^2 = " (modMult b' b' m))         -- bNew = b^2 % m
+             (printUh "e>>1 = "(e' `shiftR` 1))           -- eNew = e >> 1
+             $ printUh "cNew = " $ if ((e' `mod` 2) == 1)  -- if the low bit of e is 1
+                                     then (modMult c b' m) --   then cNew = c * b % m
+                                     else c                --   else cNew = c
+
+modMult :: Integer -> Integer -> Integer -> Integer
+modMult x y m = mm 0 $ reverse $ bits x
+  where mm p [] = p
+        mm p xi = let p1 = p `shiftL` 1
+                      i = if (head xi)
+                            then y
+                            else 0
+                      p2 = p1 + i
+                      p3 = if (p2 >= m)
+                             then p2 - m
+                             else p2
+                      p4 = if (p3 >= m)
+                             then p3 - m
+                             else p3
+                  in mm p4 (tail xi)
+
+bits :: Integer -> [Bool]
+bits 0 = []
+bits x = ((x `mod` 2) == 1):(bits $ x `shiftR` 1)
 
 ----------------------------------------------------
 -- The main function, where we read the output of --

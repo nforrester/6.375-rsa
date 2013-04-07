@@ -81,6 +81,12 @@ int writeBigint(FILE *stream, bigint a) {
   return writeBIData(stream, a.data, NCHUNKS);
 }
 
+void printBigint(char *label, bigint a) {
+  printf(label);
+  writeBigint(stdout, a);
+  printf("\n");
+}
+
 #define writeBIDataMacro(fun_name_param, type_param, chunk_size_param) \
   int fun_name_param(FILE *stream, type_param *data, size_t nChunks) { \
     int firstChunk = TRUE; \
