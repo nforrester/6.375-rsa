@@ -27,22 +27,19 @@ void unsetBit(int i, bigint * x) {
 // Performs bitwise P = P +/- I in place
 int add_sub_inplace(bigint * P, bigint * I, int carry_in, int extra_bits_p) {
   int i;
-  int sum = 0;
+  unsigned int sum = 0;
   int carry = carry_in;
   int extra_bits_out;
-  
-  for (i = 0; i < BI_SIZE; i++) {
-    sum = getBit(i, P) + (carry_in ? (!getBit(i, I)) : getBit(i, I)) + carry;
-  
-    if((sum & 1) == 0) {
-	    unsetBit(i, P);
-    } else {
-	    setBit(i, P);
+
+  for (i = 0; i < NCHUNKS; i++) {
+    sum = P->data[i] + (carry_in ? (~(I->data[i])) : (I->data[i])) + carry;
+    P->data[i] = sum & ((1 << CHUNK_SIZE) - 1);
+    carry = (sum >> CHUNK_SIZE) & 1;
+    if (carry_in) {
+      carry = !carry;
     }
-
-    carry = (sum & 2) >> 1;
   }
-
+  
   sum = (extra_bits_p & 1) + carry_in + carry;
   extra_bits_out = sum & 1;
   carry = (sum & 2) >> 1;
