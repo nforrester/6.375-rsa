@@ -1,0 +1,21 @@
+digraph modmult{
+ b -> modulus_2 ;
+ m -> modulus_2;
+
+ a-> modulus_1;
+ m -> modulus_1;
+
+ modulus_1 -> multiply;
+ modulus_2 -> multiply;
+
+ multiply -> dbl_modulus;
+ m -> dbl_modulus;
+
+ dbl_modulus -> result;
+
+ 
+
+
+
+
+}

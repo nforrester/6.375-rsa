@@ -9,6 +9,8 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{epstopdf}
+\usepackage{tikz}
+\usetikzlibrary{arrows}
 \usepackage{algpseudocode}
 \DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
 \linespread{1.5}
@@ -46,7 +48,14 @@ Once those problems are solved, the only remaining issue is writing a sensible i
 
 \section{MicroArchitecture}
 
-\subsection{Naive Multiply}
+\subsection{Naive Modulus Multiply}
+The naive modulus multiply does not use any of the specialized algorithms specifically tuned for hardware implementations.  The overview of this module is pictured in figure bla.
+
+\begin{figure}
+  \includegraphics[width=\textwidth]{modMultGraph.png}
+\end{figure}
+
+One particular bottleneck of this implementation is the 2048 bit width result from the multiply block resulting in a very long implementation for dbl modulus.
 
 
 \section{Algorithms}
