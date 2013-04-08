@@ -86,8 +86,7 @@ We will investigate this possibility.
 
 Unfortunately, we suspect that this may consume a tremendous amount of area,
 introduce long combinational delays, or cause other undesirable behavior.
-If so, then it will be necessary to handle large integers another way.
-We propose storing integers in BRAM, as a series of bytes.
+If so, then it will be necessary to handle large integers in smaller chunks.
 We will then be free to implement algorithms for arithmetic operations
 which operate on only a small number of bits at a time. In particular, we can 
 explore the redundant interleaved modular exponentiation algorithm, which does
@@ -107,7 +106,12 @@ the modular multipliers and the modular exponentiator
 The current plan is that large integers of (for example) 1024 bits
 will be represented in Bluespec as {\tt Int\#(1024)}.
 This will probably be practical, as we never instantiate combinational multipliers on these types,
-only bit shifts, adders, and comparators, which shouldn't take up much area.
+only bit shifts, adders, and comparators, which shouldn't take up much area. However, performing
+comparisons and arithmetic on long bit lengths will adversely affect the cycle time of the design.
+In performance critical modules, like the modular multiplier, it will be highly beneficial
+to operate on the string in chunks: for example, the 64 hardware DSP48 blocks can synthesize
+a long add/subtract chain using internal routing resources. We will investigate the complexity vs. performance
+tradeoff during hardware exploration this week.
 
 \subsection{Right to Left Binary Modular Exponentiator}
 The modular exponentiator is a circular pipeline (depicted in Figure \ref{fig-expt}).
@@ -120,7 +124,16 @@ However, this is simply an optimization, and doesn't hugely affect the overall p
 On every iteration, the value of {\tt e} is right-shifted by one bit.
 
 \subsection{Interleaved Modular Multiplier}
-I'm not sure what Tim wants to write about this, but it is depicted in Figure \ref{fig-inter}.
+The interleaved modular has the advantage of not requiring long multiplies, and works with
+only left shifts, addition, subtraction, and comparison. Unfortunately, a step of the 
+algorithm requires comparing the entire length of the data in the worst case. Additionally,
+there are 3 possible add/subtract steps at every step of the algorithm. Therefore, the propagation delay
+of each step of the algorithm may be prohibitive without pipelining. We will first investigate the
+naive, unpipelined approach and see if it offers acceptable (100s of millisecond) performance. If it 
+does not meet this target, then we will explicitly break the data into chunks to increase
+the clock speed. 
+
+An overview of the module is pictured in Figure \ref{fig-inter}.
 
 \subsection{Naive Modular Multiplier}
 The naive modular multiplier does not use any of the specialized algorithms
