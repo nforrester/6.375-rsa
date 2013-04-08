@@ -24,7 +24,7 @@
 \maketitle
 
 \section{Overview}
-Our project proposal is implementing the RSA cryptographic algorithm in Bluespec.
+Our project is implementing the RSA cryptographic algorithm in Bluespec.
 The benefits of doing this in hardware are higher performance, reduced power usage and size, and cost.
 Having reusable IP that implements RSA would allow a device manufacturer to skip the inclusion
 of a processor in a device that requires secure communications, but otherwise wouldn't need one. 
@@ -112,7 +112,8 @@ Also, $x_i$ is the $i$th bit of $x$.
 \begin{algorithmic}
 \State $x$, $y$, and $m$ are the inputs to the algorithm.
 \State $p \gets 0$
-\For{$i = (N - 1) \to 0$}
+\State $i \gets N - 1$
+\While{$i \geq 0$}
 	\State $p \gets p * 2$
 	\If{$x_i = 1$}
 		\State $p \gets p + y$
@@ -123,12 +124,23 @@ Also, $x_i$ is the $i$th bit of $x$.
 	\If{$p \geq m$}
 		\State $p \gets p - m$
 	\EndIf
-\EndFor
+  \State $i \gets i - 1$
+\EndWhile
 \State $p$ is the result of the algorithm.
 \end{algorithmic}
 
 \section{Implementation in C}
-We have a working implementation of all our algorithms in C.
+We have a working implementation of all our algorithms in C, that we wrote from scratch.
+Performance is terrible in comparison to libgcrypt,
+but libgcrypt was written by more experienced people who had more time to spend on it,
+so we think this is acceptable.
+C, of course, is unable to operate directly on 1024 bit integers,
+so we store them as arrays of 16 bit unsigned integers.
+As a result, performing bit shifts, additions, and comparisons
+takes somewhat more code than it would take to perform the corresponding operations in Bluespec.
+However, since we have now written a C implementation that does all the operations on chunked integers,
+we now feel confident in our ability to pipeline or otherwise break up
+any operations we find to be too big or long in our Bluespec implementation.
 
 \section{Microarchitecture}
 Our project is divided into two important modules.
@@ -149,6 +161,14 @@ to operate on the string in chunks: for example, the 64 hardware DSP48 blocks ca
 a long add/subtract chain using internal routing resources. We will investigate the complexity vs. performance
 tradeoff during hardware exploration this week.
 
+\begin{figure}
+  \begin{centering}
+    \includegraphics[scale=1]{top_level.png}
+    \caption{High level overview. Note that only one of two multipliers is depicted.}
+    \label{fig-top}
+  \end{centering}
+\end{figure}
+
 \subsection{Right to Left Binary Modular Exponentiator}
 The modular exponentiator is a circular pipeline (depicted in Figure \ref{fig-expt}).
 On each cycle of the pipeline it supplies inputs to the two multipliers.
@@ -159,6 +179,14 @@ if its result will be discarded anyway.
 However, this is simply an optimization, and doesn't hugely affect the overall plan.
 On every iteration, the value of {\tt e} is right-shifted by one bit.
 When {\tt e} is zero, the loop terminates.
+
+\begin{figure}
+  \begin{centering}
+    \includegraphics[width=\textwidth]{modexpt.png}
+    \caption{Modular exponentiation}
+    \label{fig-expt}
+  \end{centering}
+\end{figure}
 
 \subsection{Interleaved Modular Multiplier}
 The interleaved modular has the advantage of not requiring long multiplies, and works with
@@ -172,28 +200,6 @@ the clock speed.
 
 An overview of the module is pictured in Figure \ref{fig-inter}.
 
-\subsection{Naive Modular Multiplier}
-The naive modular multiplier does not use any of the specialized algorithms
-specifically tuned for hardware implementations.
-The overview of this module is pictured in Figure \ref{fig-naive}.
-
-
-\begin{figure}
-  \begin{centering}
-    \includegraphics[scale=1]{top_level.png}
-    \caption{High level overview. Note that only one of two multipliers is depicted.}
-    \label{fig-top}
-  \end{centering}
-\end{figure}
-
-\begin{figure}
-  \begin{centering}
-    \includegraphics[width=\textwidth]{modexpt.png}
-    \caption{Modular exponentiation}
-    \label{fig-expt}
-  \end{centering}
-\end{figure}
-
 \begin{figure}
   \begin{centering}
     \includegraphics[width=\textwidth]{modmult.png}
@@ -202,6 +208,18 @@ The overview of this module is pictured in Figure \ref{fig-naive}.
   \end{centering}
 \end{figure}
 
+\subsection{Naive Modular Multiplier}
+An alternative to interleaved modular multiplication is the Naive approach.
+The naive modular multiplier does not use any of the specialized algorithms
+specifically tuned for hardware implementations.
+This algorithms is unlikely to fit on the FPGA,
+but might be interesting to implement as a point of comparison.
+Particular bottlenecks of this implementation include the 2048 bit width result from the multiply block
+resulting in a very long implementation for {\tt dbl\_modulus},
+and the fact that such a multiplication is necessary at all.
+
+An overview of this module is pictured in Figure \ref{fig-naive}.
+
 \begin{figure}
   \begin{centering}
     \includegraphics[width=0.4\textwidth]{modMultGraph.png}
@@ -209,9 +227,6 @@ The overview of this module is pictured in Figure \ref{fig-naive}.
     \label{fig-naive}
   \end{centering}
 \end{figure}
-
-One particular bottleneck of this implementation is the 2048 bit width result from the multiply block
-resulting in a very long implementation for {\tt dbl\_modulus}.
 
 \section{Verification}
 To verify the functionality of the RSA module, we will initially separately 
