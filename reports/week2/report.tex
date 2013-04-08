@@ -64,6 +64,8 @@ a * b \bmod m = (a \bmod m) * (b \bmod m) \bmod m
 then every intermediate result can be taken modulo $m$ to keep the size of intermediate results manageable.
 Therefore, the following algorithm will compute $b^e \bmod m$ in a reasonable amount of time and memory:
 \begin{algorithmic}
+\State $b$, $e$, and $m$ are the inputs to the algorithm.
+\State $c \gets 1$
 \While{$e > 0$}
 	\If{$e \bmod 2 = 1$}
 		\State $c \gets c * b \bmod m$
@@ -71,6 +73,7 @@ Therefore, the following algorithm will compute $b^e \bmod m$ in a reasonable am
 	\State $b \gets b * b \bmod m$
 	\State $e \gets \lfloor e / 2 \rfloor$
 \EndWhile
+\State $c$ is the result of the algorithm.
 \end{algorithmic}
 This very naturally suggests a circular pipeline in hardware.
 If parallelism is desired, then multiple circular pipelines may be put in parallel,
@@ -103,6 +106,27 @@ If additions produce long combinational delays,
 we could write an addition module that operates on chunks of the number at a time,
 and does something like a pipelined carry-lookahead adder.
 Hopefully this won't be necessary though.
+
+Here is the algorithm for Interleaved modular multiplication.
+$N$ is the size of the numbers, in bits. For example, $N = 1024$.
+Also, $x_i$ is the $i$th bit of $x$.
+\begin{algorithmic}
+\State $x$, $y$, and $m$ are the inputs to the algorithm.
+\State $p \gets 0$
+\For{$i = (N - 1) \to 0$}
+	\State $p \gets p * 2$
+	\If{$x_i = 1$}
+		\State $p \gets p + y$
+	\EndIf
+	\If{$p \geq m$}
+		\State $p \gets p - m$
+	\EndIf
+	\If{$p \geq m$}
+		\State $p \gets p - m$
+	\EndIf
+\EndFor
+\State $p$ is the result of the algorithm.
+\end{algorithmic}
 
 \section{Implementation in C}
 We have a working implementation of all our algorithms in C.
