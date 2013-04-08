@@ -44,27 +44,6 @@ The main challenges we foresee in implementing RSA in Bluespec are creating a mu
 with support for modulo, exponentiation, and multiplication.
 Once those problems are solved, the only remaining issue is writing a sensible interface.
 
-\section{Implementation}
-
-\section{MicroArchitecture}
-
-\subsection{Naive Modular Multiply}
-The naive modular multiply does not use any of the specialized algorithms
-specifically tuned for hardware implementations.
-The overview of this module is pictured in Figure \ref{fig-naive}.
-
-\begin{figure}
-  \begin{centering}
-    \includegraphics[width=0.4\textwidth]{modMultGraph.png}
-    \caption{Naive Modular Multiplication}
-    \label{fig-naive}
-  \end{centering}
-\end{figure}
-
-One particular bottleneck of this implementation is the 2048 bit width result from the multiply block
-resulting in a very long implementation for {\tt dbl\_modulus}.
-
-
 \section{Algorithms}
 All of our high-level RSA modules will be built around a single module that does modular exponentiation.
 Unless some unforeseen detail necessitates a change, this module will employ the Right-to-left binary algorithm
@@ -113,6 +92,76 @@ We will then be free to implement algorithms for arithmetic operations
 which operate on only a small number of bits at a time. In particular, we can 
 explore the redundant interleaved modular exponentiation algorithm, which does
 not perform full length (1024x1024) multiplication. 
+
+\section{Implementation}
+
+\section{Microarchitecture}
+Our project is divided into two important modules.
+One module performs modular exponentiaton,
+while the other performs modular multiplication.
+The modular exponentiator instantiates two modular multipliers.
+The high level diagram in Figure \ref{fig-top} depicts the interface between
+the modular multipliers and the modular exponentiator
+(though only one multiplier is shown for economy of space).
+
+The current plan is that large integers of (for example) 1024 bits
+will be represented in Bluespec as {\tt Int\#(1024)}.
+This will probably be practical, as we never instantiate combinational multipliers on these types,
+only bit shifts, adders, and comparators, which shouldn't take up much area.
+
+\subsection{Right to Left Binary Modular Exponentiator}
+The modular exponentiator is a circular pipeline (depicted in Figure \ref{fig-expt}).
+On each cycle of the pipeline it supplies inputs to the two multipliers.
+When the multipliers complete, it stores the results back into the registers.
+However one result is discarded if the low bit of {\tt e} is 0.
+In fact, our actual implementation will probably not invoke the multiplier
+if its result will be discarded anyway.
+However, this is simply an optimization, and doesn't hugely affect the overall plan.
+On every iteration, the value of {\tt e} is right-shifted by one bit.
+
+\subsection{Interleaved Modular Multiplier}
+I'm not sure what Tim wants to write about this, but it is depicted in Figure \ref{fig-inter}.
+
+\subsection{Naive Modular Multiplier}
+The naive modular multiplier does not use any of the specialized algorithms
+specifically tuned for hardware implementations.
+The overview of this module is pictured in Figure \ref{fig-naive}.
+
+
+\begin{figure}
+  \begin{centering}
+    \includegraphics[scale=1]{top_level.png}
+    \caption{High level overview}
+    \label{fig-top}
+  \end{centering}
+\end{figure}
+
+\begin{figure}
+  \begin{centering}
+    \includegraphics[width=\textwidth]{modexpt.png}
+    \caption{Modular exponentiation}
+    \label{fig-expt}
+  \end{centering}
+\end{figure}
+
+\begin{figure}
+  \begin{centering}
+    \includegraphics[width=\textwidth]{modmult.png}
+    \caption{Interleaved modular multiplication}
+    \label{fig-inter}
+  \end{centering}
+\end{figure}
+
+\begin{figure}
+  \begin{centering}
+    \includegraphics[width=0.4\textwidth]{modMultGraph.png}
+    \caption{Naive modular multiplication}
+    \label{fig-naive}
+  \end{centering}
+\end{figure}
+
+One particular bottleneck of this implementation is the 2048 bit width result from the multiply block
+resulting in a very long implementation for {\tt dbl\_modulus}.
 
 \section{Verification}
 To verify the functionality of the RSA module, we will initially separately 
