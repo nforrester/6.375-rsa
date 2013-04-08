@@ -79,7 +79,7 @@ and collecting the results.
 
 The only remaining problem is performing multiplication, modulo, and bit shifting
 on integers that are thousands of bits long.
-If it turns out to be practical to simply instantiate registers of types like {\tt Int\#(4096)},
+If it turns out to be practical to simply instantiate registers of types like {\tt Int\#(1024)},
 and perform combinational operations on them by writing {\tt a~*~b}, {\tt a~\%~m}, and {\tt a~>>~1},
 then that's fantastic.
 We will investigate this possibility.
@@ -87,13 +87,25 @@ We will investigate this possibility.
 Unfortunately, we suspect that this may consume a tremendous amount of area,
 introduce long combinational delays, or cause other undesirable behavior.
 If so, then it will be necessary to handle large integers another way.
-We propose storing integers in BRAM, as a series of bytes.
+One possibility is storing integers in BRAM, as a series of bytes.
 We will then be free to implement algorithms for arithmetic operations
 which operate on only a small number of bits at a time. In particular, we can 
 explore the redundant interleaved modular exponentiation algorithm, which does
 not perform full length (1024x1024) multiplication. 
 
-\section{Implementation}
+Upon further reflection however, we believe that a compromise approach will be most practical.
+Our current plan is to instantiate registers of types like {\tt Int\#(1024)}, and operate on those.
+This will make combinational multiplies and divides impossible.
+However, if we use the interleaved modular multiplication algorithm,
+neither of these will be necessary, as it requires only bit shifts, additions, and comparisons,
+which shouldn't take up excessive area.
+If additions produce long combinational delays,
+we could write an addition module that operates on chunks of the number at a time,
+and does something like a pipelined carry-lookahead adder.
+Hopefully this won't be necessary though.
+
+\section{Implementation in C}
+We have a working implementation of all our algorithms in C.
 
 \section{Microarchitecture}
 Our project is divided into two important modules.
@@ -102,12 +114,7 @@ while the other performs modular multiplication.
 The modular exponentiator instantiates two modular multipliers.
 The high level diagram in Figure \ref{fig-top} depicts the interface between
 the modular multipliers and the modular exponentiator
-(though only one multiplier is shown for economy of space).
-
-The current plan is that large integers of (for example) 1024 bits
-will be represented in Bluespec as {\tt Int\#(1024)}.
-This will probably be practical, as we never instantiate combinational multipliers on these types,
-only bit shifts, adders, and comparators, which shouldn't take up much area.
+(though only one multiplier is shown for simplicity).
 
 \subsection{Right to Left Binary Modular Exponentiator}
 The modular exponentiator is a circular pipeline (depicted in Figure \ref{fig-expt}).
@@ -118,6 +125,7 @@ In fact, our actual implementation will probably not invoke the multiplier
 if its result will be discarded anyway.
 However, this is simply an optimization, and doesn't hugely affect the overall plan.
 On every iteration, the value of {\tt e} is right-shifted by one bit.
+When {\tt e} is zero, the loop terminates.
 
 \subsection{Interleaved Modular Multiplier}
 I'm not sure what Tim wants to write about this, but it is depicted in Figure \ref{fig-inter}.
