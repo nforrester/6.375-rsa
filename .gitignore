@@ -10,3 +10,4 @@ reference/rsa-libgcrypt
 
 c_code/*.o
 c_code/main
+c_code/rsa-from-scratch

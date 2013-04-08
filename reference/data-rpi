@@ -1,0 +1,8 @@
+libgcrypt-pi    Encrypt 0.001254
+libgcrypt-pi    Decrypt 0.056711
+libgcrypt-pi    Sign    0.028372
+libgcrypt-pi    Verify  0.001560
+from-scratch-pi Encrypt 0.534413
+from-scratch-pi Decrypt 39.428067
+from-scratch-pi Sign    37.940536
+from-scratch-pi Verify  0.468003

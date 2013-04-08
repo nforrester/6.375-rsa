@@ -1,0 +1,16 @@
+libgcrypt    Encrypt 0.000052
+libgcrypt    Decrypt 0.002109
+libgcrypt    Sign    0.000874
+libgcrypt    Verify  0.000056
+haskell-ilvd Encrypt 0.010197380
+haskell-ilvd Decrypt 1.172818624
+haskell-ilvd Sign    1.173780837
+haskell-ilvd Verify  0.011852521
+haskell-ntve Encrypt 0.000152313
+haskell-ntve Decrypt 0.002364973
+haskell-ntve Sign    0.002458255
+haskell-ntve Verify  0.000028554
+from-scratch Encrypt 0.034251
+from-scratch Decrypt 2.735161
+from-scratch Sign    2.736338
+from-scratch Verify  0.041881
