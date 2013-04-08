@@ -9,11 +9,11 @@ void timer_start(struct timeval *start) {
 	gettimeofday(start, NULL);
 }
 
-void timer_poll(struct timeval *start) {
+void timer_poll(char *format, struct timeval *start) {
 	struct timeval now, diff;
 	gettimeofday(&now, NULL);
 	timersub(&now, start, &diff);
-	fprintf(stderr, "Interval: %d sec %d usec\n", diff.tv_sec, diff.tv_usec);
+	fprintf(stderr, format, diff.tv_sec, diff.tv_usec);
 }
 
 gcry_sexp_t sexp_new(const char *str) {
@@ -101,7 +101,7 @@ char* encrypt(char *public_key, char *plaintext){
 		printf("Error in gcry_pk_encrypt(): %s\nSource: %s\n", gcry_strerror(error), gcry_strsource(error));
 		exit(1);
 	}
-	timer_poll(&timer);
+	timer_poll("libgcrypt    Encrypt: %d.%06d    seconds\n", &timer);
 
 	return sexp_string(r_ciph);
 }
@@ -118,7 +118,7 @@ char* decrypt(char *private_key, char *ciphertext){
 		printf("Error in gcry_pk_decrypt(): %s\nSource: %s\n", gcry_strerror(error), gcry_strsource(error));
 		exit(1);
 	}
-	timer_poll(&timer);
+	timer_poll("libgcrypt    Decrypt: %d.%06d    seconds\n", &timer);
 
 	gcry_mpi_t r_mpi = gcry_sexp_nth_mpi(r_plain, 0, GCRYMPI_FMT_USG);
 
@@ -156,7 +156,7 @@ char* sign(char *private_key, char *document){
 		printf("Error in gcry_pk_sign(): %s\nSource: %s\n", gcry_strerror(error), gcry_strsource(error));
 		exit(1);
 	}
-	timer_poll(&timer);
+	timer_poll("libgcrypt    Sign:    %d.%06d    seconds\n", &timer);
 
 	return sexp_string(r_sig);
 }
@@ -190,7 +190,7 @@ short verify(char *public_key, char *document, char *signature){
 		}
 		good_sig = 0;
 	}
-	timer_poll(&timer);
+	timer_poll("libgcrypt    Verify:  %d.%06d    seconds\n", &timer);
 	return good_sig;
 }
 

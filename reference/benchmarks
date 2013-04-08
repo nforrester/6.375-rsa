@@ -1,0 +1,5 @@
+#!/bin/bash
+
+./rsa-libgcrypt >/tmp/lgco
+cat /tmp/lgco | ./rsa-haskell >/dev/null
+cat /tmp/lgco | ../c_code/rsa-from-scratch >/dev/null

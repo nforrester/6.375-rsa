@@ -7,4 +7,4 @@ rsa-haskell: rsa-haskell.hs
 	ghc -O99 --make rsa-haskell
 
 clean:
-	rm *.o *.hi rsa-haskell rsa-libgcrypt
+	rm -f *.o *.hi rsa-haskell rsa-libgcrypt

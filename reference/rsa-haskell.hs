@@ -2,12 +2,9 @@ import Data.Maybe
 import Data.Bits
 import qualified Numeric as N
 import Control.Monad.State
-
-----------------------------------------------------------------------------
-import qualified System.IO.Unsafe as IOU
-printU label x = IOU.unsafePerformIO $ do putStrLn (label ++ (show x)); return x
-printUh label x = IOU.unsafePerformIO $ do putStrLn (label ++ (showHex x)); return x
-----------------------------------------------------------------------------
+import System.Clock
+import Text.Printf
+import System.IO
 
 ---------------------------------------
 -- Here is the implementation of RSA --
@@ -34,6 +31,12 @@ encrypt PubK{pubN = n, pubE = e} m = powMod m e n
 decrypt :: PrivateKey -> CipherText -> PlainText
 decrypt PriK{priN = n, priD = d} c = powMod c d n
 
+encrypt' :: PublicKey -> PlainText -> CipherText
+encrypt' PubK{pubN = n, pubE = e} m = powMod' m e n
+
+decrypt' :: PrivateKey -> CipherText -> PlainText
+decrypt' PriK{priN = n, priD = d} c = powMod' c d n
+
 type Document  = Integer
 type Signature = Integer
 
@@ -43,6 +46,12 @@ sign PriK{priN = n, priD = d} m = powMod m d n
 verify :: PublicKey -> Document -> Signature -> Bool
 verify PubK{pubN = n, pubE = e} m s = m == powMod s e n
 
+sign' :: PrivateKey -> Document -> Signature
+sign' PriK{priN = n, priD = d} m = powMod' m d n
+
+verify' :: PublicKey -> Document -> Signature -> Bool
+verify' PubK{pubN = n, pubE = e} m s = m == powMod' s e n
+
 -- The naive implementation of this would be:
 -- powMod b e m = b ^ e `mod` m
 -- However, this is way, way more efficient:
@@ -51,11 +60,21 @@ powMod :: Integer -> Integer -> Integer -> Integer
 powMod b e m = pm b e 1
   where pm _ 0 c = c                   -- when e == 0, then return c
         pm b' e' c =                   -- On each iteration:
-          pm (printUh "b^2 = " (modMult b' b' m))         -- bNew = b^2 % m
-             (printUh "e>>1 = "(e' `shiftR` 1))           -- eNew = e >> 1
-             $ printUh "cNew = " $ if ((e' `mod` 2) == 1)  -- if the low bit of e is 1
-                                     then (modMult c b' m) --   then cNew = c * b % m
-                                     else c                --   else cNew = c
+          pm (modMult b' b' m)         -- bNew = b^2 % m
+             (e' `shiftR` 1)           -- eNew = e >> 1
+             $ if ((e' `mod` 2) == 1)  -- if the low bit of e is 1
+                 then (modMult c b' m) --   then cNew = c * b % m
+                 else c                --   else cNew = c
+
+powMod' :: Integer -> Integer -> Integer -> Integer
+powMod' b e m = pm b e 1
+  where pm _ 0 c = c                     -- when e == 0, then return c
+        pm b' e' c =                     -- On each iteration:
+          pm ((b' * b') `mod` m)         -- bNew = b^2 % m
+             (e' `shiftR` 1)             -- eNew = e >> 1
+             $ if ((e' `mod` 2) == 1)    -- if the low bit of e is 1
+                 then ((c * b') `mod` m) --   then cNew = c * b % m
+                 else c                  --   else cNew = c
 
 modMult :: Integer -> Integer -> Integer -> Integer
 modMult x y m = mm 0 $ reverse $ bits x
@@ -96,6 +115,11 @@ main = (getContents >>=) $ evalStateT $ do
       signature    = sign priK plainText
       verification = verify pubK plainText signature
 
+      cipherText'   = encrypt' pubK plainText
+      decrypted'    = decrypt' priK cipherText
+      signature'    = sign' priK plainText
+      verification' = verify' pubK plainText signature
+
   liftIO $ do
     putStrLn "Public Key:"
     print pubK
@@ -104,14 +128,22 @@ main = (getContents >>=) $ evalStateT $ do
     putStrLn "\nPlain Text:"
     putStrLn $ showHex plainText
     putStrLn "\nCipher Text:"
+    timer <- startTimer
     putStrLn $ showHex cipherText
+    pollTimer "haskell-ilvd Encrypt: %d.%09d seconds\n" timer
     putStrLn "\nDecrypted Plain Text:"
+    timer <- startTimer
     putStrLn $ showHex decrypted
+    pollTimer "haskell-ilvd Decrypt: %d.%09d seconds\n" timer
     putStrLn "\nSignature:"
+    timer <- startTimer
     putStrLn $ showHex signature
+    pollTimer "haskell-ilvd Sign:    %d.%09d seconds\n" timer
+    timer <- startTimer
     if verification
       then putStrLn "\nSignature GOOD!"
       else putStrLn "\nSignature BAD!"
+    pollTimer "haskell-ilvd Verify:  %d.%09d seconds\n" timer
 
     if cipherText   == cipherTextCheck &&
        decrypted    == decryptedCheck  &&
@@ -119,6 +151,58 @@ main = (getContents >>=) $ evalStateT $ do
        verification == verificationCheck
       then putStrLn "Test PASSED: results match libgcrypt."
       else putStrLn "Test FAILED: results DO NOT match libgcrypt."
+
+    timer <- startTimer
+    putStrLn $ showHex cipherText'
+    pollTimer "haskell-ntve Encrypt: %d.%09d seconds\n" timer
+    putStrLn "\nDecrypted Plain Text:"
+    timer <- startTimer
+    putStrLn $ showHex decrypted'
+    pollTimer "haskell-ntve Decrypt: %d.%09d seconds\n" timer
+    putStrLn "\nSignature:"
+    timer <- startTimer
+    putStrLn $ showHex signature'
+    pollTimer "haskell-ntve Sign:    %d.%09d seconds\n" timer
+    timer <- startTimer
+    if verification'
+      then putStrLn "\nSignature GOOD!"
+      else putStrLn "\nSignature BAD!"
+    pollTimer "haskell-ntve Verify:  %d.%09d seconds\n" timer
+
+    if cipherText'   == cipherTextCheck &&
+       decrypted'    == decryptedCheck  &&
+       signature'    == signatureCheck  &&
+       verification' == verificationCheck
+      then putStrLn "Test PASSED: results match libgcrypt."
+      else putStrLn "Test FAILED: results DO NOT match libgcrypt."
+
+----------------------------------------------
+-------------- Timing functions --------------
+----------------------------------------------
+
+tsDiff :: TimeSpec -> TimeSpec -> TimeSpec
+tsDiff (TimeSpec s1 n1) (TimeSpec s2 n2) = TimeSpec sd nd
+  where s1' = fromIntegral s1 :: Integer
+        n1' = fromIntegral n1 :: Integer
+        s2' = fromIntegral s2 :: Integer
+        n2' = fromIntegral n2 :: Integer
+        t1 = s1' * 1000000000 + n1'
+        t2 = s2' * 1000000000 + n2'
+        td = t1 - t2
+        (sd', nd') = td `divMod` 1000000000
+        sd = fromIntegral sd'
+        nd = fromIntegral nd'
+
+printTS :: String -> TimeSpec -> IO ()
+printTS format (TimeSpec s n) = hPrintf stderr format s n
+
+startTimer :: IO TimeSpec
+startTimer = getTime Monotonic
+
+pollTimer :: String -> TimeSpec -> IO ()
+pollTimer format before = do
+  now <- getTime Monotonic
+  printTS format $ tsDiff now before
 
 ----------------------------------------------
 -- The rest of the code is just for reading --
