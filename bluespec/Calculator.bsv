@@ -3,7 +3,7 @@ import FIFO::*;
 import GetPut::*;
 import ClientServer::*;
 
-typedef Bit#(32) Value;
+typedef Bit#(1024) Value;
 
 typedef enum {
     ADD,
