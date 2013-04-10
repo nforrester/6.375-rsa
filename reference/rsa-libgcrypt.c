@@ -208,7 +208,7 @@ int main() {
 
 	char *ciphertext;
 	ciphertext = encrypt(public_key, plaintext);
-	printf("Ciper Text:\n%s\n", ciphertext);
+	printf("Cipher Text:\n%s\n", ciphertext);
 
 	char *decrypted;
 	decrypted = decrypt(private_key, ciphertext);
