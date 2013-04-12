@@ -7,8 +7,7 @@ typedef Bit#(1024) Value;
 
 typedef enum {
     ADD,
-    SUB,
-    MUL
+    SUB
 } Operation deriving(Bits, Eq);
 
 typedef union tagged {
@@ -37,7 +36,6 @@ module mkCalculator (Calculator);
                     case (op)
                         ADD: upd = acc + val;
                         SUB: upd = acc - val;
-                        MUL: upd = acc * val;
                     endcase
                 end
             endcase
