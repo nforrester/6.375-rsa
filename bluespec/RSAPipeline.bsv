@@ -1,11 +1,11 @@
-import ModExpt::*;
-import ModMultIlvd::*;
+//import ModExpt::*;
+//import ModMultIlvd::*;
 import RSAPipelineTypes::*;
-
+import Memory::*;
 import ClientServer::*;
 import GetPut::*;
 import Vector::*;
-
+/*
 
 (* synthesize *)
 module mkRSAModMultIlvd(ModMultIlvd);
@@ -21,10 +21,18 @@ module mkRSAModExpt(ModExpt);
 endmodule
 
 
-
+*/
 module mkRSAPipeline(RSAPipeline);
-  ModMultIlvd modmult <- mkRSAModMultIlvd();
-  ModExpt modexpt <- mkRSAModExpt();
-
-
+//  ModMultIlvd modmult <- mkRSAModMultIlvd();
+//  ModExpt modexpt <- mkRSAModExpt();
+  Memory memory <- mkMemory();
+  
+  interface Get get_result;
+    method ActionValue#(CHUNK_T) get();
+      let x <- memory.response.get();
+      return x;
+    endmethod
+  endinterface
+  interface MemInit memInit = memory.init;
 endmodule
+
