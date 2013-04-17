@@ -1,9 +1,10 @@
 import RSAPipelineTypes::*;
-
+import ModMultIlvd::*;
 
 import ClientServer::*;
 import GetPut::*;
 import FIFO::*;
+import FIFOF::*;
 import Vector::*;
 
 typedef Server#(
@@ -29,24 +30,24 @@ typedef Server#(
 	 BIG_INT
 */
 module mkModExpt(ModExpt);
-  FIFO#(1, Vector#(3, BIG_INT)) inputFIFO <- mkFIFO();
-  FIFO#(1, BIG_INT) outputFIFO <- mkFIFO();
+  FIFOF#(Vector#(3, BIG_INT)) inputFIFO <- mkFIFOF();
+  FIFO#(BIG_INT) outputFIFO <- mkFIFO();
   
   Reg#(BIG_INT) b <- mkReg(0);
 	Reg#(BIG_INT) e <- mkReg(0);
 	Reg#(BIG_INT) c <- mkReg(0);
-	BIG_INT m;
+	Reg#(BIG_INT) m <- mkReg(0);
 
 	ModExpt modmult0 <- mkModMultIlvd();
 	ModExpt modmult1 <- mkModMultIlvd();
 	
 	rule reset;
 		if(inputFIFO.notEmpty) begin
-			let packet_in <- inputFIFO.first();
+			let packet_in = inputFIFO.first();
 		
-			b <= packet[0];
-			e <= packet[1];
-			m = packet[2];
+			b <= packet_in[0];
+			e <= packet_in[1];
+			m <= packet_in[2];
 			// Cross your fingers that the compiler elaborates this into a constant
 			c <= 0 - 1;
 			
@@ -59,32 +60,32 @@ module mkModExpt(ModExpt);
 		packet_out[0] = b;
 		packet_out[1] = b;
 		packet_out[2] = m;
-		modmult0.put(packet_out);
+		modmult0.request.put(packet_out);
 		
-		b <= modmult1.get();
+		BIG_INT r0 <- modmult0.response.get();
+		b <= r0;
 		
 		packet_out[0] = b;
 		packet_out[1] = c;
 		packet_out[2] = m;
-		modmult1.put(packet_out);
+		modmult1.request.put(packet_out);
 		
-		if(e & 1) begin
-			c <= modmult1.get();
+		if((e & fromInteger(1)) == fromInteger(1)) begin
+			BIG_INT r1 <- modmult1.response.get();
+			c <= r1;
 		end
 		
 		e <= e >> 1;
 		
 		if(e == 0) begin
 			inputFIFO.deq();
-			outputFIFO.push(c);
+			outputFIFO.enq(c);
 		end
 		
 	endrule
 
-	rule 
-
-  interface Put request = toPut(infifo);
-  interface Get response = toGet(outfifo);
+  interface Put request = toPut(inputFIFO);
+  interface Get response = toGet(outputFIFO);
 endmodule
 
 module mkModExptTest (Empty);

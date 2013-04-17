@@ -5,11 +5,12 @@ import DefaultValue::*;
 import SceMi::*;
 import Clocks::*;
 
-import Calculator::*;
+import RSA::*;
+import RSAPipelineTypes::*;
 
 (* synthesize *)
-module [Module] mkDutWrapper (Calculator);
-    Calculator calc <- mkCalculator();
+module [Module] mkDutWrapper (RSA);
+    RSAServer rsa <- mkRSA();
     return calc;
 endmodule
 
@@ -18,9 +19,9 @@ module [SceMiModule] mkSceMiLayer();
     SceMiClockConfiguration conf = defaultValue;
 
     SceMiClockPortIfc clk_port <- mkSceMiClockPort(conf);
-    Calculator dut <- buildDut(mkDutWrapper, clk_port);
+    RSAServer dut <- buildDut(mkDutWrapper, clk_port);
 
-    Empty calcxactor <- mkServerXactor(dut, clk_port);
+    Empty rsaxactor <- mkServerXactor(dut, clk_port);
 
     Empty shutdown <- mkShutdownXactor();
 endmodule

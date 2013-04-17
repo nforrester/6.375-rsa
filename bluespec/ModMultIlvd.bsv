@@ -5,18 +5,22 @@ import ClientServer::*;
 import GetPut::*;
 import FIFO::*;
 import Vector::*;
-typedef 3 NUM_ARGS
 
 typedef enum {Shift, XiY, AddPI, PsubM1, PsubM2, Done} State deriving (Bits,Eq);
 typedef Server#(
-  Vector#(NUM_ARGS, BIG_INT), 
+  Vector#(3, BIG_INT),  // changed this to hardcoded 3 since the algo is hardcoded
   BIG_INT
 ) ModMultIlvd;
 
+
+// Interface:
+// Put: Of type  Vector#(3, BIG_INT)
+// [0] = X, [1] = Y, [2]= M
+// Get: Of type  FIFO#(BIG_INT)
 module mkModMultIlvd(ModMultIlvd);
-  FIFO#(Vector#(NUM_ARGS, BIG_INT)) inputFIFO <- mkFIFO();
+  FIFO#(Vector#(3, BIG_INT)) inputFIFO <- mkFIFO();
   FIFO#(BIG_INT) outputFIFO <- mkFIFO();
-  Reg#(Bit#(11)) i <- mkReg(0);
+  /*Reg#(Bit#(11)) i <- mkReg(0);
   Reg#(BIG_INT) P <- mkReg(0);
   Reg#(BIG_INT) I  <- mkRegU;
   Reg#(Bit#(5)) state <- mkReg(Shift);
@@ -82,7 +86,7 @@ module mkModMultIlvd(ModMultIlvd);
     i = 0;
     outputFIFO.enq(P);
     P <= 0;
-  endrule
+  endrule*/
 
    
   interface Put request = toPut(inputFIFO);
