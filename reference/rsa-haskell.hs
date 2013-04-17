@@ -5,6 +5,8 @@ import Control.Monad.State
 import System.Clock
 import Text.Printf
 import System.IO
+import Text.ParserCombinators.Parsec hiding ((<|>), many)
+import Control.Applicative
 
 ---------------------------------------
 -- Here is the implementation of RSA --
@@ -101,80 +103,81 @@ bits x = ((x `mod` 2) == 1):(bits $ x `shiftR` 1)
 ---- rsa-libgcrypt, and check the calculations -----
 ----------------------------------------------------
 
-main = (getContents >>=) $ evalStateT $ do
-  pubK <- stsk readPubK
-  priK <- stsk readPriK
-  plainText <- stsk readHex
-  cipherTextCheck <- stsk readCipherText
-  decryptedCheck <- stsk readHex
-  signatureCheck <- stsk readSignature
-  verificationCheck <- liftM (("Signature GOOD!" ==) . head . lines . trimSpace) $ get
+main = do
+  parsed <- liftM (parse input "Standard Input") getContents
+  case parsed of
+     Left e -> error $ "Parse error at: " ++ (show e)
+     Right ( pubK
+           , priK
+           , plainText
+           , cipherTextCheck
+           , decryptedCheck
+           , signatureCheck
+           , verificationCheck) -> do
+      let cipherText   = encrypt pubK plainText
+          decrypted    = decrypt priK cipherText
+          signature    = sign priK plainText
+          verification = verify pubK plainText signature
 
-  let cipherText   = encrypt pubK plainText
-      decrypted    = decrypt priK cipherText
-      signature    = sign priK plainText
-      verification = verify pubK plainText signature
+          cipherText'   = encrypt' pubK plainText
+          decrypted'    = decrypt' priK cipherText
+          signature'    = sign' priK plainText
+          verification' = verify' pubK plainText signature
 
-      cipherText'   = encrypt' pubK plainText
-      decrypted'    = decrypt' priK cipherText
-      signature'    = sign' priK plainText
-      verification' = verify' pubK plainText signature
+      putStrLn "Public Key:"
+      print pubK
+      putStrLn "\nPrivate Key:"
+      print priK
+      putStrLn "\nPlain Text:"
+      putStrLn $ showHex plainText
+      putStrLn "\nCipher Text:"
+      timer <- startTimer
+      putStrLn $ showHex cipherText
+      pollTimer "haskell-ilvd Encrypt: %d.%09d seconds\n" timer
+      putStrLn "\nDecrypted Plain Text:"
+      timer <- startTimer
+      putStrLn $ showHex decrypted
+      pollTimer "haskell-ilvd Decrypt: %d.%09d seconds\n" timer
+      putStrLn "\nSignature:"
+      timer <- startTimer
+      putStrLn $ showHex signature
+      pollTimer "haskell-ilvd Sign:    %d.%09d seconds\n" timer
+      timer <- startTimer
+      if verification
+        then putStrLn "\nSignature GOOD!"
+        else putStrLn "\nSignature BAD!"
+      pollTimer "haskell-ilvd Verify:  %d.%09d seconds\n" timer
 
-  liftIO $ do
-    putStrLn "Public Key:"
-    print pubK
-    putStrLn "\nPrivate Key:"
-    print priK
-    putStrLn "\nPlain Text:"
-    putStrLn $ showHex plainText
-    putStrLn "\nCipher Text:"
-    timer <- startTimer
-    putStrLn $ showHex cipherText
-    pollTimer "haskell-ilvd Encrypt: %d.%09d seconds\n" timer
-    putStrLn "\nDecrypted Plain Text:"
-    timer <- startTimer
-    putStrLn $ showHex decrypted
-    pollTimer "haskell-ilvd Decrypt: %d.%09d seconds\n" timer
-    putStrLn "\nSignature:"
-    timer <- startTimer
-    putStrLn $ showHex signature
-    pollTimer "haskell-ilvd Sign:    %d.%09d seconds\n" timer
-    timer <- startTimer
-    if verification
-      then putStrLn "\nSignature GOOD!"
-      else putStrLn "\nSignature BAD!"
-    pollTimer "haskell-ilvd Verify:  %d.%09d seconds\n" timer
+      if cipherText   == cipherTextCheck &&
+         decrypted    == decryptedCheck  &&
+         signature    == signatureCheck  &&
+         verification == verificationCheck
+        then putStrLn "Test PASSED: results match libgcrypt."
+        else putStrLn "Test FAILED: results DO NOT match libgcrypt."
 
-    if cipherText   == cipherTextCheck &&
-       decrypted    == decryptedCheck  &&
-       signature    == signatureCheck  &&
-       verification == verificationCheck
-      then putStrLn "Test PASSED: results match libgcrypt."
-      else putStrLn "Test FAILED: results DO NOT match libgcrypt."
+      timer <- startTimer
+      putStrLn $ showHex cipherText'
+      pollTimer "haskell-ntve Encrypt: %d.%09d seconds\n" timer
+      putStrLn "\nDecrypted Plain Text:"
+      timer <- startTimer
+      putStrLn $ showHex decrypted'
+      pollTimer "haskell-ntve Decrypt: %d.%09d seconds\n" timer
+      putStrLn "\nSignature:"
+      timer <- startTimer
+      putStrLn $ showHex signature'
+      pollTimer "haskell-ntve Sign:    %d.%09d seconds\n" timer
+      timer <- startTimer
+      if verification'
+        then putStrLn "\nSignature GOOD!"
+        else putStrLn "\nSignature BAD!"
+      pollTimer "haskell-ntve Verify:  %d.%09d seconds\n" timer
 
-    timer <- startTimer
-    putStrLn $ showHex cipherText'
-    pollTimer "haskell-ntve Encrypt: %d.%09d seconds\n" timer
-    putStrLn "\nDecrypted Plain Text:"
-    timer <- startTimer
-    putStrLn $ showHex decrypted'
-    pollTimer "haskell-ntve Decrypt: %d.%09d seconds\n" timer
-    putStrLn "\nSignature:"
-    timer <- startTimer
-    putStrLn $ showHex signature'
-    pollTimer "haskell-ntve Sign:    %d.%09d seconds\n" timer
-    timer <- startTimer
-    if verification'
-      then putStrLn "\nSignature GOOD!"
-      else putStrLn "\nSignature BAD!"
-    pollTimer "haskell-ntve Verify:  %d.%09d seconds\n" timer
-
-    if cipherText'   == cipherTextCheck &&
-       decrypted'    == decryptedCheck  &&
-       signature'    == signatureCheck  &&
-       verification' == verificationCheck
-      then putStrLn "Test PASSED: results match libgcrypt."
-      else putStrLn "Test FAILED: results DO NOT match libgcrypt."
+      if cipherText'   == cipherTextCheck &&
+         decrypted'    == decryptedCheck  &&
+         signature'    == signatureCheck  &&
+         verification' == verificationCheck
+        then putStrLn "Test PASSED: results match libgcrypt."
+        else putStrLn "Test FAILED: results DO NOT match libgcrypt."
 
 ----------------------------------------------
 -------------- Timing functions --------------
@@ -205,7 +208,7 @@ pollTimer format before = do
   printTS format $ tsDiff now before
 
 ----------------------------------------------
--- The rest of the code is just for reading --
+-- The rest of the code is just for parsing --
 -------- the output of rsa-libgcrypt ---------
 ----------------------------------------------
 
@@ -214,74 +217,88 @@ data SExp = SL [SExp]
           | SI Integer
           deriving Show
 
-isSpace = flip elem " \n\t"
-trimSpace = dropWhile isSpace
+sexp = list <|> int <|> str
+list = fmap SL $ char '(' *> spaces *> many (sexp <* spaces) <* char ')'
+int = fmap (SI . readHex) $ char '#' *> some hexDigit <* char '#'
+str = fmap SS $ some $ letter <|> char '-'
 
-isNotThing = flip elem ") \n\t"
-splitThing = span (not . isNotThing)
+pubK = do
+  string "Public Key:"
+  spaces
+  SL [SS "public-key"
+     , SL [ SS "rsa"
+          , SL [SS "n", SI n]
+          , SL [SS "e", SI e]]] <- sexp
+  spaces
+  return $ PubK{ pubN = n
+               , pubE = e }
 
-readSExp :: String -> Maybe (SExp, String)
-readSExp input = if null trimmed
-                   then Nothing
-                   else Just $ case head trimmed
-                               of '(' -> let (items, unread) = readSL $ tail trimmed
-                                         in (SL items, unread)
-                                  '#' -> (SI $ fst $ readHex $ init $ tail $ this, others)
-                                  _ -> (SS this, others)
-  where trimmed = trimSpace input
-        (this, others) = splitThing trimmed
-        readSL (')':unread) = ([], unread)
-        readSL str = let (this, more) = fromJust $ readSExp str
-                         (rest, unread) = readSL $ trimSpace more
-                        in (this:rest, trimSpace unread)
+priK = do
+  string "Private Key:"
+  spaces
+  SL [SS "private-key"
+     , SL [ SS "rsa"
+          , SL [SS "n", SI n]
+          , SL [SS "e", SI e]
+          , SL [SS "d", SI d]
+          , SL [SS "p", SI p]
+          , SL [SS "q", SI q]
+          , SL [SS "u", SI u]]] <- sexp
+  spaces
+  return $ PriK{ priN = n
+               , priE = e
+               , priD = d
+               , priP = p
+               , priQ = q
+               , priU = u }
 
-readPubK :: String -> (PublicKey, String)
-readPubK string = (pubK, rest)
-  where (sExp, rest) = fromJust $ readSExp string
-        SL [SS "public-key"
-           , SL [SS "rsa"
-                , SL [SS "n", SI n]
-                , SL [SS "e", SI e]]] = sExp
-        pubK = PubK{ pubN = n
-                   , pubE = e }
+ciphertext = do
+  string "Cipher Text:"
+  spaces
+  SL [SS "enc-val"
+     , SL [ SS "rsa"
+          , SL [SS "a", SI a]]] <- sexp
+  spaces
+  return a
 
-readPriK :: String -> (PrivateKey, String)
-readPriK string = (priK, rest)
-  where (sExp, rest) = fromJust $ readSExp string
-        SL [SS "private-key"
-           , SL [SS "rsa"
-                , SL [SS "n", SI n]
-                , SL [SS "e", SI e]
-                , SL [SS "d", SI d]
-                , SL [SS "p", SI p]
-                , SL [SS "q", SI q]
-                , SL [SS "u", SI u]]] = sExp
-        priK = PriK{ priN = n
-                   , priE = e
-                   , priD = d
-                   , priP = p
-                   , priQ = q
-                   , priU = u }
+signature = do
+  string "Signature:"
+  spaces
+  SL [SS "sig-val"
+     , SL [ SS "rsa"
+          , SL [SS "s", SI s]]] <- sexp
+  spaces
+  return s
 
-readCipherText :: String -> (Integer, String)
-readCipherText string = (cipherText, rest)
-  where (sExp, rest) = fromJust $ readSExp string
-        SL [SS "enc-val"
-           , SL [SS "rsa"
-                , SL [SS "a", SI cipherText]]] = sExp
+plaintext = do
+  string "Plain Text:"
+  spaces
+  liftM readHex $ some hexDigit <* spaces
 
-readSignature :: String -> (Integer, String)
-readSignature string = (signature, rest)
-  where (sExp, rest) = fromJust $ readSExp string
-        SL [SS "sig-val"
-           , SL [SS "rsa"
-                , SL [SS "s", SI signature]]] = sExp
+decrypted = do
+  string "Decrypted Plain Text:"
+  spaces
+  liftM readHex $ some hexDigit <* spaces
 
-skipLine = unlines . tail . lines . trimSpace
-readHex = head . N.readHex
+options a b = liftM (a ==) $ (try $ string a) <|> string b
+verification = options "Signature GOOD!" "Signature BAD!"
+
+readHex = fst . head . N.readHex
 showHex = flip N.showHex ""
 
-stsk r = do
-  (val, rest) <- liftM (r . skipLine) $ get
-  put rest
-  return val
+input = do
+  spaces
+  publicKey <- pubK
+  privateKey <- priK
+  plainText <- plaintext
+  cipherText <- ciphertext
+  decryptedPlainText <- decrypted
+  sign <- signature
+  verified <- verification
+  return ( publicKey
+         , privateKey
+         , plainText
+         , cipherText
+         , decryptedPlainText
+         , sign
+         , verified)
