@@ -26,12 +26,13 @@ module mkRSAPipeline(RSAPipeline);
 ModMultIlvd modmult <- mkRSAModMultIlvd();
 //  ModExpt modexpt <- mkRSAModExpt();
   Memory memory <- mkMemory();
-  Reg#(Int#(8)) state <- mkReg(1);
+  Reg#(Int#(8)) state <- mkReg(0);
 
   rule doSomething(memory.init.done());
       let x = MemReq{op:False, addr:1, data:0};
       memory.request.put(x);
-      $fwrite(stdout, "%x",state);
+      let y = 0;
+      $fwrite(stdout, "%d ... y = %d",state, y);
       $display("done");
   endrule
 
