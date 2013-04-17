@@ -5,7 +5,7 @@ import ClientServer::*;
 import GetPut::*;
 import FIFO::*;
 import Vector::*;
-typedef 3 NUM_ARGS
+typedef 3 NUM_ARGS;
 
 typedef enum {Shift, XiY, AddPI, PsubM1, PsubM2, Done} State deriving (Bits,Eq);
 typedef Server#(
@@ -17,71 +17,73 @@ module mkModMultIlvd(ModMultIlvd);
   FIFO#(Vector#(NUM_ARGS, BIG_INT)) inputFIFO <- mkFIFO();
   FIFO#(BIG_INT) outputFIFO <- mkFIFO();
   Reg#(Bit#(11)) i <- mkReg(0);
-  Reg#(BIG_INT) P <- mkReg(0);
-  Reg#(BIG_INT) I  <- mkRegU;
-  Reg#(Bit#(5)) state <- mkReg(Shift);
+  Reg#(BIG_INT) p_val <- mkReg(0);
+  Reg#(BIG_INT) i_val  <- mkRegU;
+  Reg#(State) state <- mkReg(Shift);
 
   rule doShift (state == Shift);
-    P <= P << 1;
+    p_val <= p_val << 1;
     state <= XiY;
   endrule
 
   rule doXiY (state == XiY);
     let in = inputFIFO.first();
-    let X = in[0];
-    let Y = in[1];
+    let x_val = in[0];
+    let y_val = in[1];
  
-    for(Integer j = 0; j < NCHUNKS; j = j + 1)begin
+    for(Integer j = 0; j < valueof(NCHUNKS); j = j + 1)begin
       Bit#(CHUNK_SIZE) y = ?;
-      Bit#(CHUNK_SIZE) x = zeroExtend(X[i]);
+      Bit#(CHUNK_SIZE) x = zeroExtend(x_val[i]);
         
-      for(Integer k = 0; k < CHUNK_SIZE; k = k +1)begin
-        let idx = j*CHUNK_SIZE + k;
-        y[k] = Y[idx];
+      for(Integer k = 0; k < valueof(CHUNK_SIZE); k = k +1)begin
+        let idx = j*valueof(CHUNK_SIZE) + k;
+        y[k] = y_val[idx];
        end
 
       Bit#(CHUNK_SIZE) res = y*x;
-      for(Integer k = 0; k < CHUNK_SIZE; k = k +1)begin
-        let idx = j*CHUNK_SIZE + k;
-        I[idx] <= res[k];
+      for(Integer k = 0; k < valueof(CHUNK_SIZE); k = k +1)begin
+        let idx = j*valueof(CHUNK_SIZE) + k;
+        i_val[idx] <= res[k];
         end
       end
       state <= AddPI;
     endrule
     rule doAddPI(state == AddPI);
-      P <= P + I;
-      state <= PSubM1
+      p_val <= p_val + i_val;
+      state <= PsubM1;
   endrule
 
-  rule doPSubM1(state == PSubM1);
+  rule doPSubM1(state == PsubM1);
     let in = inputFIFO.first();
-    M = in[2];
-    if (P >= M) begin
-      P <= P - M;
+    let m_val = in[2];
+    if (p_val >= m_val) begin
+      p_val <= p_val - m_val;
     end
-    state <= PSubM2;
+    state <= PsubM2;
   endrule
 
-  rule doPSubM2 (state == PSubM2);
-    if (P >= M) begin
-      P <= P - M;
+  rule doPSubM2 (state == PsubM2);
+    let in = inputFIFO.first();
+    let m_val = in[2];  
+    if (p_val >= m_val) begin
+      p_val <= p_val - m_val;
     end
     i <= + 1;
 
-    if(i+1 == BI_SIZE)begin
+    if(i+1 == fromInteger( valueof(BI_SIZE)))begin
       state <= Done;
     end
     else begin
       state <= Shift;
     end
 
-  end
+  endrule
 
   rule doComplete (state == Done);
     inputFIFO.deq();
-    i = 0;
-    outputFIFO.enq(P);
-    P <= 0;
+    i <= 0;
+    outputFIFO.enq(p_val);
+    p_val <= 0;
   endrule
 
    
