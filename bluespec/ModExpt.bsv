@@ -45,8 +45,19 @@ module mkModExpt(ModExpt);
 	ModExpt modmult1 <- mkModMultIlvd();
 
   Reg#(State) state <- mkReg(Done);
-	
-	rule start(state == Done);
+	Reg#(Bool) hack <-mkReg(False);
+
+  rule init(!hack);
+    hack <= True;
+    b <= 0;
+    e <= 0;
+    c <= 0;
+    m <= 0;
+    state <= Done;
+  endrule
+
+	rule start(hack&& state == Done);
+    $display("modExpt \t\t Start");
     let packet_in = inputFIFO.first();
     inputFIFO.deq();
   
@@ -59,7 +70,8 @@ module mkModExpt(ModExpt);
 	endrule
 
 	rule putMult(state == PutMult);
-    Vector#(3, BIG_INT) packet_out;
+    $display("modExpt \t\t PutMult");
+    Vector#(3, BIG_INT) packet_out = ?;
 		
 		if(e == 0) begin
 			outputFIFO.enq(c);
@@ -71,7 +83,6 @@ module mkModExpt(ModExpt);
         packet_out[2] = m;
         modmult1.request.put(packet_out);
       end
-
       packet_out[0] = b;
       packet_out[1] = b;
       packet_out[2] = m;
@@ -82,15 +93,27 @@ module mkModExpt(ModExpt);
 	endrule
 	
 	rule getMult(state == GetMult);
-		if((e & fromInteger(1)) == fromInteger(1)) begin
+		let next_c = ?;
+    let next_b = ?;
+    let next_e = ?;
+
+    if((e & fromInteger(1)) == fromInteger(1)) begin
 			BIG_INT r1 <- modmult1.response.get();
+      next_c = r1;
 			c <= r1;
 		end
+    else next_c = c;
 		
 		BIG_INT r0 <- modmult0.response.get();
 		b <= r0;
+    next_b = r0;
 		
-		e <= e >> 1;
+		e <= e >>1;
+    next_e = e >> 1;
+
+    
+    $display("modExpt \t\t GetMult\t\tb=%d\tc=%d\te=%d",next_b,next_c,next_e);
+    state <= PutMult;
 	endrule
 
   interface Put request = toPut(inputFIFO);

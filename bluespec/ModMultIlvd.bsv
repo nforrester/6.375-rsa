@@ -27,7 +27,7 @@ module mkModMultIlvd(ModMultIlvd);
   Reg#(Bool) hack <- mkReg(False);
   
   rule init(!hack);
-    $display("hack fix zeros");
+    //$display("hack fix zeros");
       hack <= True;
       i <= fromInteger(valueof(NUM_BITS_IN_CHUNK))-1;
       p_val <= 0;
@@ -36,11 +36,11 @@ module mkModMultIlvd(ModMultIlvd);
 
  
   rule doShift (state == Shift  && hack);
-    $display("mod mult function i = %d", i);
+    //$display("mod mult function i = %d", i);
     let next_p = p_val << 1;
     p_val <= next_p;
     state <= XiY;
-    $display("doShift\t\tP = %d", next_p);
+    //$display("doShift\t\tP = %d", next_p);
   endrule
 
   rule doXiY (state == XiY);
@@ -56,7 +56,7 @@ module mkModMultIlvd(ModMultIlvd);
       else begin
         next_p = p_val;
         end
-      $display("doXiY\t\tp = %d", next_p);
+      //$display("doXiY\t\tp = %d", next_p);
         
       state <= PsubM1;
 
@@ -75,7 +75,7 @@ module mkModMultIlvd(ModMultIlvd);
       next_p = p_val;
     end
     state <= PsubM2;
-    $display("doPSubM1\t\tp = %d", next_p);
+    //$display("doPSubM1\t\tp = %d", next_p);
   endrule
 
   rule doPSubM2 (state == PsubM2);
@@ -90,7 +90,7 @@ module mkModMultIlvd(ModMultIlvd);
       next_p = p_val;
     end
 
-    $display("doPSubM2\t\tp = %d", next_p);
+    //$display("doPSubM2\t\tp = %d", next_p);
     i <= i -1;
     if(i==0)begin
       state <= Done;
@@ -102,11 +102,13 @@ module mkModMultIlvd(ModMultIlvd);
   endrule
 
   rule doComplete (state == Done);
-    $display("\t\t complete p = %d", p_val);
+  let in = inputFIFO.first();
+  $display("%d * %d mod %d = %d",in[0], in[1], in[2], p_val);
     inputFIFO.deq();
-    i <= 0;
     outputFIFO.enq(p_val);
     p_val <= 0;
+    i <= fromInteger(valueof(NUM_BITS_IN_CHUNK))-1;
+    state <= Shift;
   endrule
 
 

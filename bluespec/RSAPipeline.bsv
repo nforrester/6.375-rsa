@@ -1,4 +1,4 @@
-//import ModExpt::*;
+import ModExpt::*;
 import ModMultIlvd::*;
 import RSAPipelineTypes::*;
 import Memory::*;
@@ -13,7 +13,7 @@ module mkRSAModMultIlvd(ModMultIlvd);
   return modmult;
 endmodule
 
-/*
+
 
 (* synthesize *)
 module mkRSAModExpt(ModExpt);
@@ -22,11 +22,11 @@ module mkRSAModExpt(ModExpt);
 endmodule
 
 
-*/
+
 module mkRSAPipeline(RSAPipeline);
  
   ModMultIlvd modmult <- mkRSAModMultIlvd();
-//  ModExpt modexpt <- mkRSAModExpt();
+  ModExpt modexpt <- mkRSAModExpt();
   Memory memory <- mkMemory();
   Reg#(Addr) state <- mkReg(0);
   Reg#(Bool) hack <- mkReg(False);
@@ -36,27 +36,20 @@ module mkRSAPipeline(RSAPipeline);
       state <= 0;
       
       // test 3*5 mod 20 = 15
-      BIG_INT x = 3;
-      BIG_INT y = 5;
-      BIG_INT m = 20;
-
       Vector#(3,BIG_INT) in = ?;
       in[0] = 5;
       in[1] = 3;
-      in[2] = 20;
+      in[2] = 8;
       $display("sending test case in");
-      modmult.request.put(in);
+      modexpt.request.put(in);
+      //modmult.request.put(in);
 
   endrule
-/*  rule getResponse;
-      $display("recieved response");
-      let x <- modmult.response.get();
-      $display(x);
-  endrule
-  */    
+   
   rule doSomething(memory.init.done() && hack && state < 1 );
       $display("recieved response");
-      let y <- modmult.response.get();
+      let y <- modexpt.response.get();
+      //let y <- modmult.response.get();
       $display(y);
     
      // let x = MemReq{op:False, addr:state, data:0};
