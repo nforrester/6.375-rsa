@@ -254,8 +254,48 @@ The modules we implemented are:  {\tt SceMiLayer.bsv, RSAPipeline.bsv, RSAPipeli
 We created a simple adder in order to synthesize our design.  Since we had doubts about the success of this representation this was a vital step before continuing our design. Our concerns were well-founded for the simple {\tt Int\#(1024)} representation: the simple addition of two {\tt Int\#(1024)} were unable to synthesize.
 \subsection{Planned Exploration}
 
-\subsubsection{Trade-Offs}
+\subsubsection{Trade-Offs: Cycle Time Estimation}
 
+There are two major loops that run in the algorithm: the exponentiation loop,
+and the modular multiplication loop. Each loop performs a bitwise operation
+on the data, so it needs to perform a cycle for every bit of data. For a
+1024 bit block size, both the outer (exponentiation) and inner (multiplication)
+loops will require 1024 cycles. Therefore, at the minimum, the algorithm
+requires ${N}^2$ cycles to perform one operation. However, since we were unable
+to synthesize a 1024 bit wide adder, we will have to operate on the data
+in chunks. This necessitates adding additional nested (pipelined) loops
+inside the algorithm.
+
+For a N-bit block size with M chunks, we would need to perform an additional $\frac{2N}{M}$
+cycles of addition and $\frac{N}{M}$ cycles of comparison within every multiplication step in
+the worst case. Therefore, the worst case cycle count is given by:
+
+\begin{equation}
+cycles_{worst}=\frac{3N^{3}}{M}
+\end{equation}
+
+For a 32-bit chunk size (N = 1024, M = 64), we would require 100 million cycles
+to complete an operation on the block. To match the performance of the
+Raspberry Pi (200 ms), this would necessitate a worst case clock speed of 500 MHz.
+
+The best case clock speed would require only a single comparison (detecting a difference
+in the first chunk and aborting the full length) and no additional additions,
+which would defined by
+
+\begin{equation}
+cycles_{best}=N\cdot (N+1)
+\end{equation}
+
+For a 32-bit chunk size, this would necessitate a clock speed of 5 Mhz to meet the
+performance of the Raspberry Pi.
+
+The average case will likely be towards the best case speed: we are currently
+running a benchmark to determine average case performance.
+
+Therefore, to improve performance, it will be necessary to optimize the
+processing requirements on the required comparison step in the interleaved
+modular multiply. It may be possible to explore faster comparison
+architectures by saving intermediate results from previous cycles.
 \subsection{Design Exploration Plan}
 
 

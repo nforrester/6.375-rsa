@@ -5,6 +5,15 @@
 #define GCRYPT_NO_DEPRECATED
 #include <gcrypt.h>
 
+typedef struct {
+  unsigned char mod[256];
+  unsigned char priv_exp[256];
+  unsigned char pub_exp[256];
+  size_t mod_len;
+  size_t priv_len;
+  size_t pub_len;
+} rsa_packet;
+
 void timer_start(struct timeval *start) {
 	gettimeofday(start, NULL);
 }
@@ -27,6 +36,24 @@ gcry_sexp_t sexp_new(const char *str) {
 	}
 
 	return sexp;
+}
+
+void printBits(size_t const size, void const * const ptr)
+{
+    unsigned char *b = (unsigned char*) ptr;
+    unsigned char byte;
+    int i, j;
+
+    for (i=size-1;i>=0;i--)
+    {
+        for (j=7;j>=0;j--)
+        {
+            byte = b[i] & (1<<j);
+            byte >>= j;
+            printf("%u", byte);
+        }
+    }
+    puts("");
 }
 
 char* sexp_string(gcry_sexp_t sexp) {
@@ -59,9 +86,9 @@ void crypto_init(){
 	gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
 }
 
-void generate_key(char **public_key, char **private_key) {
+void generate_key(rsa_packet * packet, char **public_key, char **private_key) {
 	gcry_error_t error;
-
+	int i;
 	// Generate a reduced strength (to save time) RSA key, 1024 bits long
 	gcry_sexp_t params = sexp_new("(genkey (rsa (transient-key) (nbits 4:1024)))");
 	gcry_sexp_t r_key;
@@ -72,6 +99,24 @@ void generate_key(char **public_key, char **private_key) {
 
 	gcry_sexp_t public_sexp  = gcry_sexp_nth(r_key, 1);
 	gcry_sexp_t private_sexp = gcry_sexp_nth(r_key, 2);
+	gcry_sexp_t mod_sexp = gcry_sexp_cdr(gcry_sexp_find_token(private_sexp, "n", 1));
+	gcry_sexp_t priv_exp_sexp = gcry_sexp_cdr(gcry_sexp_find_token(private_sexp, "e", 1));
+	gcry_sexp_t pub_exp_sexp = gcry_sexp_cdr(gcry_sexp_find_token(public_sexp, "e", 1));
+
+	
+	// Extract the raw data in MPI format
+	gcry_mpi_t mod_mpi, pubexp_mpi, privexp_mpi;
+  mod_mpi = gcry_sexp_nth_mpi(mod_sexp, 0, GCRYMPI_FMT_USG); 
+  privexp_mpi = gcry_sexp_nth_mpi(priv_exp_sexp, 0, GCRYMPI_FMT_USG);   
+  pubexp_mpi = gcry_sexp_nth_mpi(pub_exp_sexp, 0, GCRYMPI_FMT_USG); 
+
+  //gcry_mpi_aprint(GCRYMPI_FMT_HEX, public_key,  NULL, mod_mpi);
+  // Now pack it into unsigned char
+	gcry_mpi_print(GCRYMPI_FMT_USG, packet->mod, 256, &packet->mod_len, mod_mpi);
+	gcry_mpi_print(GCRYMPI_FMT_USG, packet->priv_exp, 256, &packet->priv_len, privexp_mpi);
+	gcry_mpi_print(GCRYMPI_FMT_USG, packet->pub_exp, 256, &packet->pub_len, pubexp_mpi);  
+  
+  //snprintf (modulus, 512, "fmt: %i: %.*s\n", (int)len, (int)len, mod);
 
 	*public_key = sexp_string(public_sexp);
 	*private_key = sexp_string(private_sexp);
@@ -196,13 +241,31 @@ short verify(char *public_key, char *document, char *signature){
 
 int main() {
 	crypto_init();
-
+int i;
+	rsa_packet packet;
 	char *public_key, *private_key;
+	
+	
+	generate_key(&packet, &public_key, &private_key);
+	
+	printf("Raw data dump\n Modulus length: %i\n", packet.mod_len);
+	for(i = 0; i < packet.mod_len; i++) {
+  	printf("%X", packet.mod[i]);
+  }
+  
+  printf("\nPrivate exponent length: %i\n", packet.priv_len);
+	for(i = 0; i < packet.priv_len; i++) {
+  	printf("%X", packet.priv_exp[i]);
+  }
+  
+    printf("\nPublic exponent length: %i\n", packet.pub_len);
+	for(i = 0; i < packet.pub_len; i++) {
+  	printf("%X", packet.pub_exp[i]);
+  }
 
-	generate_key(&public_key, &private_key);
-	printf("Public Key:\n%s\n", public_key);
+	printf("\nPublic Key:\n%s\n", public_key);
 	printf("Private Key:\n%s\n", private_key);
-
+	exit(-1);
 	char *plaintext = "DEADBEEF0123456789";
 	printf("Plain Text:\n%s\n\n", plaintext);
 

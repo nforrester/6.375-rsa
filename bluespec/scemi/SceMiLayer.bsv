@@ -26,7 +26,6 @@ module [SceMiModule] mkSceMiLayer();
 
     Empty mem <- mkPutXactor(dut.memInit.request, clk_port);
     Empty rsa_result <- mkGetXactor(dut.get_result, clk_port);
-
     Empty shutdown <- mkShutdownXactor();
 endmodule
 
