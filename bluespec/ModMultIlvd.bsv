@@ -25,64 +25,74 @@ module mkModMultIlvd(ModMultIlvd);
   Reg#(BIG_INT) i_val  <- mkRegU;
   Reg#(State) state <- mkReg(Shift);
 
-  rule doShift (state == Shift);
-    $display("mod mult function do shift i = %d", i);
-    p_val <= p_val << 1;
+  Reg#(Bool) hack <- mkReg(False);
+  
+  rule init(!hack);
+    $display("hack fix zeros");
+      hack <= True;
+      i <= 0;
+      p_val <= 0;
+      state <= Shift;
+  endrule
+
+ 
+  rule doShift (state == Shift  && hack);
+    $display("mod mult function i = %d", i);
+    let next_p = p_val << 1;
+    p_val <= next_p;
     state <= XiY;
+    $display("doShift\t\t P = %d", next_p);
   endrule
 
   rule doXiY (state == XiY);
-    $display("mod mult doXiY");
     let in = inputFIFO.first();
     let x_val = in[0];
     let y_val = in[1];
-/* 
-    for(Integer j = 0; j < valueof(NCHUNKS); j = j + 1)begin
-      Bit#(NUM_BITS_IN_CHUNK) y = ?;
-      Bit#(NUM_BITS_IN_CHUNK) x = zeroExtend(x_val[i]);
-        
-      for(Integer k = 0; k < valueof(NUM_BITS_IN_CHUNK); k = k +1)begin
-        let idx = j*valueof(NUM_BITS_IN_CHUNK) + k;
-        y[k] = y_val[idx];
-       end
-
-      Bit#(NUM_BITS_IN_CHUNK) res = y*x;
-      for(Integer k = 0; k < valueof(NUM_BITS_IN_CHUNK); k = k +1)begin
-        let idx = j*valueof(NUM_BITS_IN_CHUNK) + k;
-        i_val[idx] <= res[k];
+      
+      let next_p = ?;
+      if(x_val[i] == 1)begin
+        i_val <= y_val;
+        next_p = p_val + y_val;
+        p_val <= next_p;
         end
-      end*/
-
-      i_val <= zeroExtend(x_val[i])*y_val;
-      state <= AddPI;
+      else begin
+        next_p = p_val;
+        end
+      $display("doXiY\t\tp = %d", next_p);
+        
+      state <= PsubM1;
 
     i <= i + 1;
     endrule
     
-    rule doAddPI(state == AddPI);
-    $display("mod mult AddPi");
-      p_val <= p_val + i_val;
-      state <= PsubM1;
-  endrule
-
   rule doPSubM1(state == PsubM1);
-    $display("mod mult doPSubM1");
     let in = inputFIFO.first();
     let m_val = in[2];
+    let next_p = ?;
     if (p_val >= m_val) begin
-      p_val <= p_val - m_val;
+      next_p = p_val - m_val;
+      p_val <= next_p;
+    end
+    else begin
+      next_p = p_val;
     end
     state <= PsubM2;
+    $display("doPSubM1\t\tp = %d", next_p);
   endrule
 
   rule doPSubM2 (state == PsubM2);
-    $display("mod mult doPSubM2");
     let in = inputFIFO.first();
     let m_val = in[2];  
+    let next_p = ?;
     if (p_val >= m_val) begin
-      p_val <= p_val - m_val;
+      next_p = p_val - m_val;
+      p_val <= next_p;
+    end
+    else begin
+      next_p = p_val;
     end
 
+    $display("doPSubM2\t\tp = %d", next_p);
     if(i+1 == fromInteger( valueof(BI_SIZE)))begin
       state <= Done;
     end
@@ -93,7 +103,7 @@ module mkModMultIlvd(ModMultIlvd);
   endrule
 
   rule doComplete (state == Done);
-    $display("mod mult - complete");
+    $display("\t\t complete p = %d", p_val);
     inputFIFO.deq();
     i <= 0;
     outputFIFO.enq(p_val);

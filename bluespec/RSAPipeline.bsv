@@ -48,17 +48,22 @@ module mkRSAPipeline(RSAPipeline);
       modmult.request.put(in);
 
   endrule
-  rule getResponse;
+/*  rule getResponse;
       $display("recieved response");
       let x <- modmult.response.get();
       $display(x);
   endrule
-      
-  rule doSomething(memory.init.done() && hack && state < 16 );
-      let x = MemReq{op:False, addr:state, data:0};
-      memory.request.put(x);
-      $fwrite(stdout, "%d\n",state);
-      $display("done");
+  */    
+  rule doSomething(memory.init.done() && hack && state < 1 );
+      $display("recieved response");
+      let y <- modmult.response.get();
+      $display(y);
+    
+     // let x = MemReq{op:False, addr:state, data:0};
+      //memory.request.put(x);
+     // $fwrite(stdout, "%d\n",state);
+    //  $display("done");
+      $finish();
       state <= state +1;
   endrule
 
