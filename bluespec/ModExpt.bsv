@@ -51,28 +51,40 @@ module mkModExpt(ModExpt);
 			// Cross your fingers that the compiler elaborates this into a constant
 			c <= 0 - 1;
 			
+			// Prime the modular multipliers
+			packet_out[0] = b;
+			packet_out[1] = b;
+			packet_out[2] = m;
+			modmult0.request.put(packet_out);
+			
+			packet_out[0] = b;
+			packet_out[1] = c;
+			packet_out[2] = m;
+			modmult1.request.put(packet_out);
+			
 		end
 	endrule
 	
 	rule shift;
 		Vector#(3, BIG_INT) packet_out;
 		
-		packet_out[0] = b;
-		packet_out[1] = b;
-		packet_out[2] = m;
-		modmult0.request.put(packet_out);
-		
 		BIG_INT r0 <- modmult0.response.get();
 		b <= r0;
-		
-		packet_out[0] = b;
-		packet_out[1] = c;
-		packet_out[2] = m;
-		modmult1.request.put(packet_out);
 		
 		if((e & fromInteger(1)) == fromInteger(1)) begin
 			BIG_INT r1 <- modmult1.response.get();
 			c <= r1;
+		end else begin
+			// Only push data during the shift phase
+			packet_out[0] = b;
+			packet_out[1] = b;
+			packet_out[2] = m;
+			modmult0.request.put(packet_out);
+			
+			packet_out[0] = b;
+			packet_out[1] = c;
+			packet_out[2] = m;
+			modmult1.request.put(packet_out);
 		end
 		
 		e <= e >> 1;
