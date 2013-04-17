@@ -26,11 +26,13 @@ module mkModMultIlvd(ModMultIlvd);
   Reg#(State) state <- mkReg(Shift);
 
   rule doShift (state == Shift);
+    $display("mod mult function do shift i = %d", i);
     p_val <= p_val << 1;
     state <= XiY;
   endrule
 
   rule doXiY (state == XiY);
+    $display("mod mult doXiY");
     let in = inputFIFO.first();
     let x_val = in[0];
     let y_val = in[1];
@@ -53,14 +55,18 @@ module mkModMultIlvd(ModMultIlvd);
 
       i_val <= zeroExtend(x_val[i])*y_val;
       state <= AddPI;
+
+    i <= i + 1;
     endrule
     
     rule doAddPI(state == AddPI);
+    $display("mod mult AddPi");
       p_val <= p_val + i_val;
       state <= PsubM1;
   endrule
 
   rule doPSubM1(state == PsubM1);
+    $display("mod mult doPSubM1");
     let in = inputFIFO.first();
     let m_val = in[2];
     if (p_val >= m_val) begin
@@ -70,12 +76,12 @@ module mkModMultIlvd(ModMultIlvd);
   endrule
 
   rule doPSubM2 (state == PsubM2);
+    $display("mod mult doPSubM2");
     let in = inputFIFO.first();
     let m_val = in[2];  
     if (p_val >= m_val) begin
       p_val <= p_val - m_val;
     end
-    i <= + 1;
 
     if(i+1 == fromInteger( valueof(BI_SIZE)))begin
       state <= Done;
@@ -87,6 +93,7 @@ module mkModMultIlvd(ModMultIlvd);
   endrule
 
   rule doComplete (state == Done);
+    $display("mod mult - complete");
     inputFIFO.deq();
     i <= 0;
     outputFIFO.enq(p_val);

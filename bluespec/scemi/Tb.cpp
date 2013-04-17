@@ -8,7 +8,7 @@
 #include "bsv_scemi.h"
 #include "SceMiHeaders.h"
 #include "ResetXactor.h"
-const int NUM_INPUTS=1024;
+int NUM_INPUTS=0;
 FILE * out = NULL;
 long int outCount = 0;
 // Initialize the memories from the given vmh file.
@@ -47,7 +47,7 @@ bool mem_init(const char *filename, InportProxyT<MemInit>& mem)
 
     free(line);
     fclose(file);
-
+    NUM_INPUTS=addr;
     MemInit msg;
     msg.the_tag = MemInit::tag_InitDone;
     mem.sendMessage(msg);
@@ -110,9 +110,8 @@ int main(int argc, char* argv[])
         return 1;
     }
 
- while(outCount <2){};
-  //  int x = getchar();
-fclose(out);
+    while (outCount < NUM_INPUTS){}
+    fclose(out);
 
     shutdown.blocking_send_finish();
     scemi_service_thread->stop();
