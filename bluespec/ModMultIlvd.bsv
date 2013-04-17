@@ -22,7 +22,6 @@ module mkModMultIlvd(ModMultIlvd);
   FIFO#(BIG_INT) outputFIFO <- mkFIFO();
   Reg#(Bit#(32)) i <- mkReg(0);
   Reg#(BIG_INT) p_val <- mkReg(0);
-  Reg#(BIG_INT) i_val  <- mkRegU;
   Reg#(State) state <- mkReg(Shift);
 
   Reg#(Bool) hack <- mkReg(False);
@@ -30,7 +29,7 @@ module mkModMultIlvd(ModMultIlvd);
   rule init(!hack);
     $display("hack fix zeros");
       hack <= True;
-      i <= 0;
+      i <= fromInteger(valueof(NUM_BITS_IN_CHUNK))-1;
       p_val <= 0;
       state <= Shift;
   endrule
@@ -41,7 +40,7 @@ module mkModMultIlvd(ModMultIlvd);
     let next_p = p_val << 1;
     p_val <= next_p;
     state <= XiY;
-    $display("doShift\t\t P = %d", next_p);
+    $display("doShift\t\tP = %d", next_p);
   endrule
 
   rule doXiY (state == XiY);
@@ -51,7 +50,6 @@ module mkModMultIlvd(ModMultIlvd);
       
       let next_p = ?;
       if(x_val[i] == 1)begin
-        i_val <= y_val;
         next_p = p_val + y_val;
         p_val <= next_p;
         end
@@ -62,7 +60,7 @@ module mkModMultIlvd(ModMultIlvd);
         
       state <= PsubM1;
 
-    i <= i + 1;
+    //i <= i -1;
     endrule
     
   rule doPSubM1(state == PsubM1);
@@ -93,7 +91,8 @@ module mkModMultIlvd(ModMultIlvd);
     end
 
     $display("doPSubM2\t\tp = %d", next_p);
-    if(i+1 == fromInteger( valueof(BI_SIZE)))begin
+    i <= i -1;
+    if(i==0)begin
       state <= Done;
     end
     else begin

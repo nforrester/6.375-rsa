@@ -41,8 +41,8 @@ module mkRSAPipeline(RSAPipeline);
       BIG_INT m = 20;
 
       Vector#(3,BIG_INT) in = ?;
-      in[0] = 3;
-      in[1] = 5;
+      in[0] = 5;
+      in[1] = 3;
       in[2] = 20;
       $display("sending test case in");
       modmult.request.put(in);
