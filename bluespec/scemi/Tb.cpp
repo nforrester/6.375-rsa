@@ -56,11 +56,11 @@ bool mem_init(const char *filename, InportProxyT<MemInit>& mem)
 void out_cb(void* x, const BIG_INT &res)
   { 
     if(outCount < NUM_INPUTS){
-      int a = res.get() & 0xFF ;
+      int a = (res.get() & 0xFF );
       int b = (res.get() & 0xFF00) >> 8 ;
       printf("a = %x\t b= %x\n", a,b);
-      fputc(a, out);
-      fputc(b, out);
+      fputc((a+'0'), out);
+      //fputc(b, out);
       outCount++;
      }else{
       fclose(out);
@@ -111,7 +111,7 @@ int main(int argc, char* argv[])
     }
 
     while (outCount < NUM_INPUTS){}
-    fclose(out);
+    //fclose(out);
 
     shutdown.blocking_send_finish();
     scemi_service_thread->stop();
