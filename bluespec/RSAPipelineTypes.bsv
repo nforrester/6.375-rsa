@@ -26,7 +26,7 @@ typedef TMul#(BI_SIZE,3)  RES_0;
 
 interface RSAPipeline;
   interface MemInitIfc memInit;
-  interface Get#(CHUNK_T) get_result;
+  interface Get#(BIG_INT) get_result;
 endinterface
 
 // Memory Types

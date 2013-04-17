@@ -8,7 +8,7 @@
 #include "bsv_scemi.h"
 #include "SceMiHeaders.h"
 #include "ResetXactor.h"
-int NUM_INPUTS=0;
+int NUM_INPUTS=1;
 FILE * out = NULL;
 long int outCount = 0;
 // Initialize the memories from the given vmh file.
@@ -39,7 +39,7 @@ bool mem_init(const char *filename, InportProxyT<MemInit>& mem)
                 msg.m_InitLoad.m_addr = addr;
                 msg.m_InitLoad.m_data = data;
                 mem.sendMessage(msg);
-                printf("addr: %x\tdata: %x\n",addr,data);
+              //  printf("addr: %x\tdata: %x\n",addr,data);
                 addr++;
             }
         }
@@ -47,17 +47,17 @@ bool mem_init(const char *filename, InportProxyT<MemInit>& mem)
 
     free(line);
     fclose(file);
-    NUM_INPUTS=addr;
+   // NUM_INPUTS=addr;
     MemInit msg;
     msg.the_tag = MemInit::tag_InitDone;
     mem.sendMessage(msg);
     return true;
 }
-void out_cb(void* x, const CHUNK_T &res)
+void out_cb(void* x, const BIG_INT &res)
   { 
     if(outCount < NUM_INPUTS){
-      int a = res.get() & 0xFF;
-      int b = (res.get() & 0xFF00) >> 8;
+      int a = res.get() & 0xFF ;
+      int b = (res.get() & 0xFF00) >> 8 ;
       printf("a = %x\t b= %x\n", a,b);
       fputc(a, out);
       fputc(b, out);
