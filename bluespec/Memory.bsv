@@ -51,7 +51,7 @@ module mkMemory(Memory);
 
   interface Put request;
     method Action put(MemReq x); 
-      bram.portA.request.put(makeRequest(True, x.addr, x.data));
+      bram.portA.request.put(makeRequest(x.op, x.addr, x.data));
     endmethod
   endinterface
 

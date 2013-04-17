@@ -7,6 +7,12 @@ typedef TMul#(8,NUM_BITS_IN_CHUNK) CHUNK_SIZE;
 typedef TDiv#(BI_SIZE,CHUNK_SIZE) NCHUNKS;
 typedef Bit#(1024) BIG_INT;
 
+// pointers for B, E, N and Result
+typedef TMul#(BI_SIZE,0)  B_0;
+typedef TMul#(BI_SIZE,1)  E_0;
+typedef TMul#(BI_SIZE,2)  N_0;
+typedef TMul#(BI_SIZE,3)  RES_0;
+
 interface RSAPipeline;
   interface MemInitIfc memInit;
   interface Get#(CHUNK_T) get_result;
@@ -31,6 +37,7 @@ interface MemInitIfc;
 endinterface
 
 typedef struct{
+    Bool  op;
     Addr  addr;
     CHUNK_T  data;
 } MemReq deriving(Eq,Bits);

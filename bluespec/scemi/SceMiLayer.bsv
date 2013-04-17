@@ -25,7 +25,7 @@ module [SceMiModule] mkSceMiLayer();
     RSAPipeline dut <- buildDutWithSoftReset(mkDutWrapper, clk_port);
 
     Empty mem <- mkPutXactor(dut.memInit.request, clk_port);
-    Empty result <- mkGetXactor(dut.get_result, clk_port);
+    Empty rsa_result <- mkGetXactor(dut.get_result, clk_port);
 
     Empty shutdown <- mkShutdownXactor();
 endmodule

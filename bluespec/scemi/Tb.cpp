@@ -8,6 +8,7 @@
 #include "bsv_scemi.h"
 #include "SceMiHeaders.h"
 #include "ResetXactor.h"
+const int NUM_INPUTS=1024;
 FILE * out = NULL;
 long int outCount = 0;
 // Initialize the memories from the given vmh file.
@@ -54,9 +55,10 @@ bool mem_init(const char *filename, InportProxyT<MemInit>& mem)
 }
 void out_cb(void* x, const CHUNK_T &res)
   { 
-    if(outCount < 1023){
+    if(outCount < NUM_INPUTS){
       int a = res.get() & 0xFF;
       int b = (res.get() & 0xFF00) >> 8;
+      printf("a = %x\t b= %x\n", a,b);
       fputc(a, out);
       fputc(b, out);
       outCount++;
@@ -82,7 +84,7 @@ int main(int argc, char* argv[])
     // Initialize the SceMi ports
     InportProxyT<MemInit> mem("", "scemi_mem_inport", sceMi);
     
-    OutportProxyT<CHUNK_T> outport("", "scemi_mem_outport", sceMi);
+    OutportProxyT<CHUNK_T> outport("", "scemi_rsa_result_outport", sceMi);
     outport.setCallBack(out_cb,NULL);
 
   //  ResetXactor reset("", "scemi", sceMi);

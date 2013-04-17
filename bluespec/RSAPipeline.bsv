@@ -26,13 +26,21 @@ module mkRSAPipeline(RSAPipeline);
 //  ModMultIlvd modmult <- mkRSAModMultIlvd();
 //  ModExpt modexpt <- mkRSAModExpt();
   Memory memory <- mkMemory();
-  
+  Reg#(Bit#(16)) state <- mkReg(0);
+
+  rule doSomething ( state < 1024);
+    let x = MemReq{op:False, addr:0, data:0};
+    memory.request.put(x);
+    state <= state +1;
+    $display("state is %d", state);
+  endrule
   interface Get get_result;
     method ActionValue#(CHUNK_T) get();
       let x <- memory.response.get();
       return x;
     endmethod
   endinterface
+
   interface MemInit memInit = memory.init;
 endmodule
 
