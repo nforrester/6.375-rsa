@@ -13,34 +13,15 @@ int modExpt(bigint b, bigint e, bigint m, bigint *result) {
   clearBigint(result);
   result->data[0] = 1;
 
-  //printf("\n\n\n----------- MODULAR EXPONENTIATION -----------");
-  //printf("\n\nm = ");
-  //writeBigint(stdout,m);
-
   while (!equal(zero, e)) {
-    //printf("\n\n\n----------- NEW ITERATION -----------");
-    //printf("\n\nb = ");
-    //writeBigint(stdout,b);
-    //printf("\n\ne = ");
-    //writeBigint(stdout,e);
-    //printf("\n\nc = ");
-    //writeBigint(stdout,*result);
-    //printf("\n\n");
-
     if (e.data[0] % 2 == 1) {
-      //printf("odd stuff\n");
       modMult(*result, b, m, &tmp); // res = res*b % m
       memcpy(result->data, tmp.data, NCHUNKS * sizeof(CHUNK_T));
-      //printBigint("\n\n result from res* b %% m is ", *result);
-      //printf("\n");
     }
     modMult(b, b, m, &tmp); // b = b ^2 % m
     memcpy(b.data, tmp.data, NCHUNKS * sizeof(CHUNK_T));
-    //printBigint("\n\n result from b * b %% m is ", *result);
     shiftR(e, 1, &tmp); // e >> 1
     memcpy(e.data, tmp.data, NCHUNKS * sizeof(CHUNK_T));
-    //printf("enter any char\n");
-//    getc(stdin);
   }
   return SUCCESS;
 }

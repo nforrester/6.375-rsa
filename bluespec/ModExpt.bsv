@@ -29,6 +29,9 @@ typedef Server#(
 	 
 	 BIG_INT
 */
+
+typedef enum {PutMult, GetMult, Done} State deriving (Bits, Eq);
+
 module mkModExpt(ModExpt);
   FIFOF#(Vector#(3, BIG_INT)) inputFIFO <- mkFIFOF();
   FIFO#(BIG_INT) outputFIFO <- mkFIFO();
@@ -40,48 +43,54 @@ module mkModExpt(ModExpt);
 
 	ModExpt modmult0 <- mkModMultIlvd();
 	ModExpt modmult1 <- mkModMultIlvd();
+
+  Reg#(State) state <- mkReg(Done);
 	
-	rule reset;
-		if(inputFIFO.notEmpty) begin
-			let packet_in = inputFIFO.first();
+	rule start(state == Done);
+    let packet_in = inputFIFO.first();
+    inputFIFO.deq();
+  
+    b <= packet_in[0];
+    e <= packet_in[1];
+    m <= packet_in[2];
+    c <= 1;
+
+    state <= PutMult;
+	endrule
+
+	rule putMult(state == PutMult);
+    Vector#(3, BIG_INT) packet_out;
 		
-			b <= packet_in[0];
-			e <= packet_in[1];
-			m <= packet_in[2];
-			// Cross your fingers that the compiler elaborates this into a constant
-			c <= 0 - 1;
-			
-		end
+		if(e == 0) begin
+			outputFIFO.enq(c);
+      state <= Done;
+		end else begin
+      if((e & fromInteger(1)) == fromInteger(1)) begin
+        packet_out[0] = b;
+        packet_out[1] = c;
+        packet_out[2] = m;
+        modmult1.request.put(packet_out);
+      end
+
+      packet_out[0] = b;
+      packet_out[1] = b;
+      packet_out[2] = m;
+      modmult0.request.put(packet_out);
+
+      state <= GetMult;
+    end
 	endrule
 	
-	rule shift;
-		Vector#(3, BIG_INT) packet_out;
-		
-		packet_out[0] = b;
-		packet_out[1] = b;
-		packet_out[2] = m;
-		modmult0.request.put(packet_out);
-		
-		BIG_INT r0 <- modmult0.response.get();
-		b <= r0;
-		
-		packet_out[0] = b;
-		packet_out[1] = c;
-		packet_out[2] = m;
-		modmult1.request.put(packet_out);
-		
+	rule getMult(state == GetMult);
 		if((e & fromInteger(1)) == fromInteger(1)) begin
 			BIG_INT r1 <- modmult1.response.get();
 			c <= r1;
 		end
 		
+		BIG_INT r0 <- modmult0.response.get();
+		b <= r0;
+		
 		e <= e >> 1;
-		
-		if(e == 0) begin
-			inputFIFO.deq();
-			outputFIFO.enq(c);
-		end
-		
 	endrule
 
   interface Put request = toPut(inputFIFO);
