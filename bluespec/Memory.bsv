@@ -18,7 +18,6 @@ function BRAMRequest#(Addr,CHUNK_T) makeRequest(Bool write, Addr addr, CHUNK_T d
                       };
 endfunction
 
- (*synthesize*)
 module mkMemInitBRAM(BRAM1Port#(Addr, CHUNK_T) mem, MemInitIfc ifc);
     Reg#(Bool) initialized <- mkReg(False);
 

@@ -4,6 +4,7 @@ import GetPut::*;
 import DefaultValue::*;
 import SceMi::*;
 import Clocks::*;
+import ResetXactor::*;
 
 import RSAPipeline::*;
 import RSAPipelineTypes::*;
@@ -21,7 +22,7 @@ module [SceMiModule] mkSceMiLayer();
     SceMiClockConfiguration conf = defaultValue;
 
     SceMiClockPortIfc clk_port <- mkSceMiClockPort(conf);
-    RSAPipeline dut <- buildDut(mkDutWrapper, clk_port);
+    RSAPipeline dut <- buildDutWithSoftReset(mkDutWrapper, clk_port);
 
     Empty mem <- mkPutXactor(dut.memInit.request, clk_port);
     Empty result <- mkGetXactor(dut.get_result, clk_port);
