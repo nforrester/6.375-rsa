@@ -32,7 +32,8 @@ extends-target: common
 scemi-tb
 build-for: c++
 c++-header-directory: tbinclude
+c++-options: -lgcrypt
 c++-header-aliases
-c++-files: ../Tb.cpp
+c++-files: ../Tb_rsa.cpp
 exe-file: tb
 

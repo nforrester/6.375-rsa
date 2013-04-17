@@ -59,7 +59,7 @@ module mkModExpt(ModExpt);
 	endrule
 
 	rule putMult(state == PutMult);
-    Vector#(3, BIG_INT) packet_out;
+    Vector#(3, BIG_INT) packet_out = ?;
 		
 		if(e == 0) begin
 			outputFIFO.enq(c);

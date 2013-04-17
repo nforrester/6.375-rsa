@@ -275,8 +275,8 @@ cycles_{worst}=\frac{3N^{3}}{M}
 \end{equation}
 
 For a 32-bit chunk size (N = 1024, M = 64), we would require 100 million cycles
-to complete an operation on the block. To match the performance of the
-Raspberry Pi (200 ms), this would necessitate a worst case clock speed of 500 MHz.
+to complete an operation on the block. However, this performance is very unlikely and
+safe to ignore. 
 
 The best case clock speed would require only a single comparison (detecting a difference
 in the first chunk and aborting the full length) and no additional additions,
@@ -289,15 +289,25 @@ cycles_{best}=N\cdot (N+1)
 For a 32-bit chunk size, this would necessitate a clock speed of 5 Mhz to meet the
 performance of the Raspberry Pi.
 
-The average case will likely be towards the best case speed: we are currently
-running a benchmark to determine average case performance.
+The average case is similar in performance to the best case. In an empirical benchmark
+using our cycle-accurate simulation, we calculated the following performance for 16-bit
+chunk size:
 
-Therefore, to improve performance, it will be necessary to optimize the
-processing requirements on the required comparison step in the interleaved
-modular multiply. It may be possible to explore faster comparison
-architectures by saving intermediate results from previous cycles.
+\begin{equation}
+cycles_{empirical}=1.6\cdot{N}^2
+\end{equation}
+
+Using this estimate, we will require a clock speed of 6 MHz to meet the Raspberry Pi performance, and
+a clock speed of 60 MHz to meet the performance of a modern dual core processor. To improve performance further, 
+it is possible to optimize the processing requirements on the required comparison step in the interleaved
+modular multiply. It may be possible to explore faster comparison architectures by saving intermediate 
+results from previous cycles.
+
 \subsection{Design Exploration Plan}
-One of the major trade offs in our design is cycle period and number of cycles per encryption/decryption. Because of this, we will need to investigate using different chunk sizes to find the most efficient design. 
+One of the major trade offs in our design is cycle period and number of cycles per encryption/decryption. 
+Because of this, we will need to investigate using different chunk sizes to find the most efficient design. We will
+run overnight synthesis runs to determine the maximum possible routable block size that will meet timing during
+Week 4.
 
 \section{Verification}
 To verify the functionality of the RSA module, we will initially separately 

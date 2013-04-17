@@ -10,6 +10,7 @@
 #define GCRYPT_NO_DEPRECATED
 #include <gcrypt.h>
 
+// RSA raw data packet to send to FPGA
 typedef struct {
   unsigned char mod[256];
   unsigned char priv_exp[256];
@@ -179,7 +180,8 @@ char* decrypt(char *private_key, char *ciphertext){
 		exit(1);
 	}
 
-	return plaintext;
+	// Return type hack
+	return (char *) plaintext;
 }
 
 char* sign(char *private_key, char *document){
@@ -247,6 +249,11 @@ short verify(char *public_key, char *document, char *signature){
 
 int main(int argc, char* argv[])
 {
+		rsa_packet packet;
+		int i;
+		bool cipher_done = 0;
+		Command cmd;
+	
     int sceMiVersion = SceMi::Version( SCEMI_VERSION_STRING );
     SceMiParameters params("scemi.params");
     SceMi *sceMi = SceMi::Init(sceMiVersion, &params);
@@ -258,14 +265,12 @@ int main(int argc, char* argv[])
     InportProxyT<Command> inport ("", "scemi_rsaxactor_req_inport", sceMi);
 
     // Initialize the SceMi outport
-    OutportQueueT<Value> outport ("", "scemi_rsaxactor_resp_outport", sceMi);
+    OutportQueueT<BIG_INT> outport ("", "scemi_rsaxactor_resp_outport", sceMi);
 
     ShutdownXactor shutdown("", "scemi_shutdown", sceMi);
 
     // Service SceMi requests
     SceMiServiceThread *scemi_service_thread = new SceMiServiceThread (sceMi);
-
-    Command cmd;
 
 		char *public_key, *private_key;
 	
@@ -310,16 +315,37 @@ int main(int argc, char* argv[])
 		} else {
 			printf("Software signature BAD!\n");
 		}
-
 		
-   /* cmd.the_tag = Command::tag_Operate;
-    cmd.m_Operate.m_val = val;
-    cmd.m_Operate.m_op = operationof(op);
-
     printf("Sending to FPGA..");
-    inport.sendMessage(cmd);
-    outport.getMessage();
-*/
+    
+		// Pack the command for transport to FPGA
+		// Command is specified in Command.h, run build and look in tbinclude
+		// Assuming mod_len >> priv_len/pub_len/len(ciphertext)
+		for(i = 0; i < packet.mod_len; i++) {
+			cmd.m_modulus = packet.mod[i];
+			
+			// Send the 
+			if(i < packet.priv_len) {
+				cmd.m_exponent = packet.priv_exp[i];
+			} else {
+				cmd.m_exponent = 0;
+			}
+			
+			// Send the ciphertext, checking for string null termination
+			if(!cipher_done) {
+				if(ciphertext[i] == '\n') {
+						cipher_done = 1;
+				}
+				cmd.m_data = ciphertext[i]; 
+			}
+			
+    	inport.sendMessage(cmd);
+		}
+		
+		 printf("Getting result..");
+		
+    std::cout << "Result: " << outport.getMessage() << std::endl;
+
     std::cout << "shutting down..." << std::endl;
     shutdown.blocking_send_finish();
     scemi_service_thread->stop();

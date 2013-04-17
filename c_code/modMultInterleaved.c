@@ -89,7 +89,7 @@ int modMultIlvd(bigint a, bigint b, bigint m, bigint *result) {
   bigint *Y = &b;
   bigint *M = &m;
   bigint I; // ok to leave uninitialized, Xi * Y will initialize
-  
+  int i_count = 0;
   int i, j;
   int extra_bits_p = 0;
   
@@ -111,15 +111,18 @@ int modMultIlvd(bigint a, bigint b, bigint m, bigint *result) {
     
     // P = P + I
     extra_bits_p = add_inplace(P, &I, extra_bits_p);
+	i_count++;
 
     // if(P >= M) P = P - M;
     if(extra_bits_p || strongly_greater(P, M)) {
       extra_bits_p = sub_inplace(P, M, extra_bits_p);
-    }
+	i_count++;    
+}
    
     // if(P >= M) P = P - M;
     if(extra_bits_p || strongly_greater(P, M)) {
       extra_bits_p = sub_inplace(P, M, extra_bits_p);
+	i_count++;
     }
 
     if(extra_bits_p || strongly_greater(P, M)) {
@@ -129,7 +132,7 @@ int modMultIlvd(bigint a, bigint b, bigint m, bigint *result) {
     }
   }
   
-  
+	printf("Total icount %i", i_count);  
   return SUCCESS;
  
 }

@@ -17,17 +17,20 @@ typedef struct {
 } Command deriving(Bits, Eq);
 
 typedef Server#(Command, BIG_INT) RSAServer;
+typedef enum {PutExpt, GetExpt, Idle} State deriving (Bits, Eq);
 
 module mkRSA (RSAServer);
+
+		Reg#(State) state <- mkReg(Idle);
 
 		// Concatenates chunks into one big BIG_INT
 		function BIG_INT toBigInt(Vector#(PACKET_COUNT, Reg#(RSA_PACKET)) data);
 			BIG_INT result = 0;
 			
-			for(Integer i = 0; i < BI_SIZE; i = i + 1) begin
-				Integer chunk_id = i * (NCHUNKS / BI_SIZE);
+			for(Integer i = 0; i < valueOf(BI_SIZE); i = i + 1) begin
+				Integer chunk_id = (i * valueOf(PACKET_COUNT)) / valueOf(BI_SIZE);
 				RSA_PACKET chunk = data[chunk_id];
-				result[i] = data[i - (chunk_id * NUM_BITS_IN_CHUNK)];
+				result[i] = chunk[i - (chunk_id * valueOf(RSA_PACKET_SIZE))];
 			end
 			
 			return result;
@@ -45,7 +48,10 @@ module mkRSA (RSAServer);
     Reg#(Bit#(TAdd#(TLog#(BI_SIZE), 1))) i <- mkReg(0);
     
     // Once loading is complete, push data to ModExpt
-    rule process;
+    
+    // !!!!!!!!!!!!
+    // RULE WONT FIRE, NEED TO PRIME MODEXPT
+    rule pushExpt(state == PutExpt);
 
     		Vector#(3, BIG_INT) packet;
     		
@@ -56,11 +62,17 @@ module mkRSA (RSAServer);
     		
     		// Perform the calculation
     		modexpt.request.put(packet);
-    		let r <- modexpt.get();
     		
     		// Allow further loads
     		i <= 0;
+    		state <= GetExpt;
 
+  	endrule
+  	
+  	rule getExpt(state == GetExpt);
+  		  let r <- modexpt.response.get();
+  			outfifo.enq(r);
+  			state <= Idle;
   	endrule
     
     // Store data from SceMi inside a buffer
@@ -72,8 +84,10 @@ module mkRSA (RSAServer);
         		
         		// Keep storing data into memory until we have the entire set
         		// Then stall until processing is complete
-        		if(i < 1023) begin
+        		if(i < 2) begin // FIX THIS TO BE PARAMETRIZABLE
         			i <= i + 1;
+        		end else begin
+        			state <= PutExpt;
         		end
         		
         endmethod

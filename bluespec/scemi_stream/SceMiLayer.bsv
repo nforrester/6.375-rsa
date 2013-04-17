@@ -6,13 +6,13 @@ import SceMi::*;
 import Clocks::*;
 import ResetXactor::*;
 
-import RSAPipeline::*;
+import RSA::*;
 import RSAPipelineTypes::*;
 
 (* synthesize *)
 
-module [Module] mkDutWrapper (RSAPipeline);
-    RSAPipeline rsa <- mkRSAPipeline();
+module [Module] mkDutWrapper (RSAServer);
+    RSAServer rsa <- mkRSA();
     return rsa;
 endmodule
 
@@ -22,10 +22,10 @@ module [SceMiModule] mkSceMiLayer();
     SceMiClockConfiguration conf = defaultValue;
 
     SceMiClockPortIfc clk_port <- mkSceMiClockPort(conf);
-    RSAPipeline dut <- buildDutWithSoftReset(mkDutWrapper, clk_port);
+    RSAServer dut <- buildDutWithSoftReset(mkDutWrapper, clk_port);
 
-    Empty mem <- mkPutXactor(dut.memInit.request, clk_port);
-    Empty rsa_result <- mkGetXactor(dut.get_result, clk_port);
+    Empty rsaxactor <- mkServerXactor(dut, clk_port);
+    
     Empty shutdown <- mkShutdownXactor();
 endmodule
 
