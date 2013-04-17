@@ -39,7 +39,7 @@ bool mem_init(const char *filename, InportProxyT<MemInit>& mem)
                 msg.m_InitLoad.m_addr = addr;
                 msg.m_InitLoad.m_data = data;
                 mem.sendMessage(msg);
-
+                printf("addr: %x\tdata: %x\n",addr,data);
                 addr++;
             }
         }
@@ -87,6 +87,7 @@ int main(int argc, char* argv[])
     OutportProxyT<CHUNK_T> outport("", "scemi_rsa_result_outport", sceMi);
     outport.setCallBack(out_cb,NULL);
 
+
   //  ResetXactor reset("", "scemi", sceMi);
     ShutdownXactor shutdown("", "scemi_shutdown", sceMi);
 
@@ -109,7 +110,10 @@ int main(int argc, char* argv[])
         return 1;
     }
 
- 
+ while(outCount <2){};
+  //  int x = getchar();
+fclose(out);
+
     shutdown.blocking_send_finish();
     scemi_service_thread->stop();
     scemi_service_thread->join();
