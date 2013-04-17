@@ -297,7 +297,7 @@ processing requirements on the required comparison step in the interleaved
 modular multiply. It may be possible to explore faster comparison
 architectures by saving intermediate results from previous cycles.
 \subsection{Design Exploration Plan}
-
+One of the major trade offs in our design is cycle period and number of cycles per encryption/decryption. Because of this, we will need to investigate using different chunk sizes to find the most efficient design. 
 
 \section{Verification}
 To verify the functionality of the RSA module, we will initially separately 
