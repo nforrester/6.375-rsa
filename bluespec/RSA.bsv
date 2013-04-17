@@ -19,6 +19,21 @@ typedef struct {
 typedef Server#(Command, BIG_INT) RSAServer;
 
 module mkRSA (RSAServer);
+
+		// Concatenates chunks into one big BIG_INT
+		function BIG_INT toBigInt(Vector#(PACKET_COUNT, Reg#(RSA_PACKET)) data);
+			BIG_INT result = 0;
+			
+			for(Integer i = 0; i < BI_SIZE; i = i + 1) begin
+				Integer chunk_id = i * (NCHUNKS / BI_SIZE);
+				RSA_PACKET chunk = data[chunk_id];
+				result[i] = data[i - (chunk_id * NUM_BITS_IN_CHUNK)];
+			end
+			
+			return result;
+		
+		endfunction
+
 		ModExpt modexpt <- mkModExpt();
     
     Vector#(PACKET_COUNT, Reg#(RSA_PACKET)) data_buffer <- replicateM(mkReg(0));
@@ -29,14 +44,15 @@ module mkRSA (RSAServer);
     
     Reg#(Bit#(TAdd#(TLog#(BI_SIZE), 1))) i <- mkReg(0);
     
+    // Once loading is complete, push data to ModExpt
     rule process;
 
     		Vector#(3, BIG_INT) packet;
     		
     		// Preload the packet
-    		packet[0] = pack(data_buffer);
-    		packet[1] = pack(exponent_buffer);
-    		packet[2] = pack(modulus_buffer);
+    		packet[0] = toBigInt(data_buffer);
+    		packet[1] = toBigInt(exponent_buffer);
+    		packet[2] = toBigInt(modulus_buffer);
     		
     		// Perform the calculation
     		modexpt.request.put(packet);
@@ -47,6 +63,7 @@ module mkRSA (RSAServer);
 
   	endrule
     
+    // Store data from SceMi inside a buffer
     interface Put request;
         method Action put(Command cmd);
         		data_buffer[i] <= cmd.data;

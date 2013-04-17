@@ -43,6 +43,8 @@ module mkModExpt(ModExpt);
 	
 	rule reset;
 		if(inputFIFO.notEmpty) begin
+			Vector#(3, BIG_INT) packet_out;
+			
 			let packet_in = inputFIFO.first();
 		
 			b <= packet_in[0];
