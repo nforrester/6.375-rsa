@@ -20,11 +20,10 @@ typedef Server#(
 module mkModMultIlvd(ModMultIlvd);
   FIFO#(Vector#(3, BIG_INT)) inputFIFO <- mkFIFO();
   FIFO#(BIG_INT) outputFIFO <- mkFIFO();
-  Reg#(Bit#(11)) i <- mkReg(0);
+  Reg#(Bit#(32)) i <- mkReg(0);
   Reg#(BIG_INT) p_val <- mkReg(0);
   Reg#(BIG_INT) i_val  <- mkRegU;
   Reg#(State) state <- mkReg(Shift);
-
 
   rule doShift (state == Shift);
     p_val <= p_val << 1;
@@ -35,24 +34,27 @@ module mkModMultIlvd(ModMultIlvd);
     let in = inputFIFO.first();
     let x_val = in[0];
     let y_val = in[1];
- 
+/* 
     for(Integer j = 0; j < valueof(NCHUNKS); j = j + 1)begin
-      Bit#(CHUNK_SIZE) y = ?;
-      Bit#(CHUNK_SIZE) x = zeroExtend(x_val[i]);
+      Bit#(NUM_BITS_IN_CHUNK) y = ?;
+      Bit#(NUM_BITS_IN_CHUNK) x = zeroExtend(x_val[i]);
         
-      for(Integer k = 0; k < valueof(CHUNK_SIZE); k = k +1)begin
-        let idx = j*valueof(CHUNK_SIZE) + k;
+      for(Integer k = 0; k < valueof(NUM_BITS_IN_CHUNK); k = k +1)begin
+        let idx = j*valueof(NUM_BITS_IN_CHUNK) + k;
         y[k] = y_val[idx];
        end
 
-      Bit#(CHUNK_SIZE) res = y*x;
-      for(Integer k = 0; k < valueof(CHUNK_SIZE); k = k +1)begin
-        let idx = j*valueof(CHUNK_SIZE) + k;
+      Bit#(NUM_BITS_IN_CHUNK) res = y*x;
+      for(Integer k = 0; k < valueof(NUM_BITS_IN_CHUNK); k = k +1)begin
+        let idx = j*valueof(NUM_BITS_IN_CHUNK) + k;
         i_val[idx] <= res[k];
         end
-      end
+      end*/
+
+      i_val <= zeroExtend(x_val[i])*y_val;
       state <= AddPI;
     endrule
+    
     rule doAddPI(state == AddPI);
       p_val <= p_val + i_val;
       state <= PsubM1;
