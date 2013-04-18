@@ -83,11 +83,11 @@ module mkRSA (RSAServer);
         		exponent_buffer[i] <= cmd.exponent;
         		modulus_buffer[i] <= cmd.modulus;
         		
+        		$display("Wrote packet", i, " mod ", cmd.modulus, " out of ", (valueOf(TDiv#(BI_SIZE, RSA_PACKET_SIZE)) - 1) );
 
         		// Keep storing data into memory until we have the entire set
         		// Then stall until processing is complete
-        		if(i < fromInteger((valueOf(TDiv#(BI_SIZE, RSA_PACKET_SIZE)) - 0)) ) begin // FIX THIS TO BE PARAMETRIZABLE
-        		  $display("Wrote packet", i, " mod ", cmd.modulus);
+        		if(i < fromInteger((valueOf(TDiv#(BI_SIZE, RSA_PACKET_SIZE)) - 1)) ) begin // FIX THIS TO BE PARAMETRIZABLE
         			i <= i + 1;
         		end else begin
         			$display("Done loading");

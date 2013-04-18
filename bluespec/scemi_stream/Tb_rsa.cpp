@@ -337,9 +337,20 @@ int main(int argc, char* argv[])
 						cipher_done = 1;
 				}
 				cmd.m_data = ciphertext[i]; 
+			} else {
+				cmd.m_data = 0;
 			}
-			printf("Sending message %i, mod: %X data: %X exponent: %X\n", i, (char) cmd.m_modulus, (char) cmd.m_data, (char) cmd.m_exponent);
+			printf("Sending message %i, mod: %X\n", i, packet.mod[i]);
     	inport.sendMessage(cmd);
+		}
+		
+		while(i < 127) {
+			printf("Sending padding %i", i);
+			cmd.m_modulus = 0;
+			cmd.m_exponent = 0;
+			cmd.m_data = 0;
+			inport.sendMessage(cmd);
+			i++;
 		}
 		
 		 printf("Getting result..");

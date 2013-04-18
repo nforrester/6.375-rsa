@@ -8,9 +8,9 @@ typedef TDiv#(BI_SIZE,CHUNK_SIZE) NCHUNKS;
 typedef Bit#(BI_SIZE) BIG_INT;
 */
 
-
 typedef 1024 BI_SIZE;
 typedef 1024 NUM_BITS_IN_CHUNK;
+
 typedef Bit#(NUM_BITS_IN_CHUNK) CHUNK_T;
 typedef TDiv#(BI_SIZE,NUM_BITS_IN_CHUNK) NCHUNKS;
 typedef Bit#(BI_SIZE) BIG_INT;
@@ -22,15 +22,18 @@ typedef Bit#(RSA_PACKET_SIZE) RSA_PACKET;
 typedef TDiv#(BI_SIZE, 8) PACKET_COUNT;
 
 // pointers for B, E, N and Result
-typedef TMul#(BI_SIZE,0)  B_0;
-typedef TMul#(BI_SIZE,1)  E_0;
-typedef TMul#(BI_SIZE,2)  N_0;
-typedef TMul#(BI_SIZE,3)  RES_0;
+typedef TMul#(NUM_BITS_IN_CHUNK,0)  B_0;
+typedef TMul#(NUM_BITS_IN_CHUNK,1)  E_0;
+typedef TMul#(NUM_BITS_IN_CHUNK,2)  N_0;
+typedef TMul#(NUM_BITS_IN_CHUNK,3)  RES_0;
+<<<<<<< .merge_file_aF7QYd
 
+=======
+>>>>>>> .merge_file_GXckfd
 
 interface RSAPipeline;
   interface MemInitIfc memInit;
-  interface Get#(CHUNK_T) get_result;
+  interface Get#(BIG_INT) get_result;
 endinterface
 
 
