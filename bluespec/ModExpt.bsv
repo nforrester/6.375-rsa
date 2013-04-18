@@ -57,7 +57,7 @@ module mkModExpt(ModExpt);
   endrule
 
 	rule start(hack&& state == Done);
-    $display("modExpt \t\t Start");
+   // $display("modExpt \t\t Start");
     let packet_in = inputFIFO.first();
     inputFIFO.deq();
   
@@ -70,7 +70,7 @@ module mkModExpt(ModExpt);
 	endrule
 
 	rule putMult(state == PutMult);
-    $display("modExpt \t\t PutMult");
+ //   $display("modExpt \t\t PutMult");
     Vector#(3, BIG_INT) packet_out = ?;
 		
 		if(e == 0) begin
@@ -112,7 +112,7 @@ module mkModExpt(ModExpt);
     next_e = e >> 1;
 
     
-    $display("modExpt \t\t GetMult\t\tb=%d\tc=%d\te=%d",next_b,next_c,next_e);
+ //   $display("modExpt \t\t GetMult\t\tb=%d\tc=%d\te=%d",next_b,next_c,next_e);
     state <= PutMult;
 	endrule
 

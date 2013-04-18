@@ -53,7 +53,7 @@ bool mem_init(const char *filename, InportProxyT<MemInit>& mem)
     mem.sendMessage(msg);
     return true;
 }
-void out_cb(void* x, const BIG_INT &res)
+void out_cb(void* x, const CHUNK_T &res)
   { 
     if(outCount < NUM_INPUTS){
       int a = (res.get() & 0xFF );

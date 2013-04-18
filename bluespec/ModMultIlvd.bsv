@@ -29,7 +29,7 @@ module mkModMultIlvd(ModMultIlvd);
   rule init(!hack);
     //$display("hack fix zeros");
       hack <= True;
-      i <= fromInteger(valueof(NUM_BITS_IN_CHUNK))-1;
+      i <= fromInteger(valueof(BI_SIZE))-1;
       p_val <= 0;
       state <= Shift;
   endrule
@@ -103,11 +103,11 @@ module mkModMultIlvd(ModMultIlvd);
 
   rule doComplete (state == Done);
   let in = inputFIFO.first();
-  $display("%d * %d mod %d = %d",in[0], in[1], in[2], p_val);
+  //%display("%d * %d mod %d = %d",in[0], in[1], in[2], p_val);
     inputFIFO.deq();
     outputFIFO.enq(p_val);
     p_val <= 0;
-    i <= fromInteger(valueof(NUM_BITS_IN_CHUNK))-1;
+    i <= fromInteger(valueof(BI_SIZE))-1;
     state <= Shift;
   endrule
 
