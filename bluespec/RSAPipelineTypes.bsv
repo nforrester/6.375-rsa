@@ -9,8 +9,8 @@ typedef Bit#(BI_SIZE) BIG_INT;
 */
 
 
-typedef 16 BI_SIZE;
-typedef 16 NUM_BITS_IN_CHUNK;
+typedef 1024 BI_SIZE;
+typedef 1024 NUM_BITS_IN_CHUNK;
 typedef Bit#(NUM_BITS_IN_CHUNK) CHUNK_T;
 typedef TDiv#(BI_SIZE,NUM_BITS_IN_CHUNK) NCHUNKS;
 typedef Bit#(BI_SIZE) BIG_INT;

@@ -48,9 +48,7 @@ module mkRSA (RSAServer);
     Reg#(Bit#(TAdd#(TLog#(BI_SIZE), 1))) i <- mkReg(0);
     
     // Once loading is complete, push data to ModExpt
-    
-    // !!!!!!!!!!!!
-    // RULE WONT FIRE, NEED TO PRIME MODEXPT
+   
     rule pushExpt(state == PutExpt);
 
     		Vector#(3, BIG_INT) packet;
@@ -59,6 +57,8 @@ module mkRSA (RSAServer);
     		packet[0] = toBigInt(data_buffer);
     		packet[1] = toBigInt(exponent_buffer);
     		packet[2] = toBigInt(modulus_buffer);
+    		
+    		$display("Loaded modexpt");
     		
     		// Perform the calculation
     		modexpt.request.put(packet);
@@ -71,6 +71,7 @@ module mkRSA (RSAServer);
   	
   	rule getExpt(state == GetExpt);
   		  let r <- modexpt.response.get();
+  	    $display("Got modexpt");
   			outfifo.enq(r);
   			state <= Idle;
   	endrule
@@ -82,11 +83,14 @@ module mkRSA (RSAServer);
         		exponent_buffer[i] <= cmd.exponent;
         		modulus_buffer[i] <= cmd.modulus;
         		
+
         		// Keep storing data into memory until we have the entire set
         		// Then stall until processing is complete
-        		if(i < 2) begin // FIX THIS TO BE PARAMETRIZABLE
+        		if(i < fromInteger((valueOf(TDiv#(BI_SIZE, RSA_PACKET_SIZE)) - 0)) ) begin // FIX THIS TO BE PARAMETRIZABLE
+        		  $display("Wrote packet", i, " mod ", cmd.modulus);
         			i <= i + 1;
         		end else begin
+        			$display("Done loading");
         			state <= PutExpt;
         		end
         		
