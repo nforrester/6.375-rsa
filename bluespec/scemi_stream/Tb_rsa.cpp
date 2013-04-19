@@ -107,7 +107,7 @@ void generate_key(rsa_packet * packet, char **public_key, char **private_key) {
 	gcry_sexp_t public_sexp  = gcry_sexp_nth(r_key, 1);
 	gcry_sexp_t private_sexp = gcry_sexp_nth(r_key, 2);
 	gcry_sexp_t mod_sexp = gcry_sexp_cdr(gcry_sexp_find_token(private_sexp, "n", 1));
-	gcry_sexp_t priv_exp_sexp = gcry_sexp_find_token(private_sexp, "e", 1);
+	gcry_sexp_t priv_exp_sexp = gcry_sexp_cdr(gcry_sexp_find_token(private_sexp, "e", 1));
 	gcry_sexp_t pub_exp_sexp = gcry_sexp_cdr(gcry_sexp_find_token(public_sexp, "e", 1));
 
 	
@@ -280,17 +280,17 @@ int main(int argc, char* argv[])
 			
 			printf("Raw data dump\n Modulus length: %i\n", packet.mod_len);
 			for(i = 0; i < packet.mod_len; i++) {
-		  	printf("%X", packet.mod[i]);
+		  	printf("%02X", packet.mod[i]);
 		  }
 		  
 		  printf("\nPrivate exponent length: %i\n", packet.priv_len);
 			for(i = 0; i < packet.priv_len; i++) {
-		  	printf("%X", packet.priv_exp[i]);
+		  	printf("%02X", packet.priv_exp[i]);
 		  }
 		  
 		    printf("\nPublic exponent length: %i\n", packet.pub_len);
 			for(i = 0; i < packet.pub_len; i++) {
-		  	printf("%X", packet.pub_exp[i]);
+		  	printf("%02X", packet.pub_exp[i]);
 		  }
 		  
 		printf("Public Key:\n%s\n", public_key);
@@ -318,6 +318,7 @@ int main(int argc, char* argv[])
 		}*/
 		
     printf("Sending to FPGA..\n");
+
     
 		// Pack the command for transport to FPGA
 		// Command is specified in Command.h, run build and look in tbinclude
@@ -334,10 +335,10 @@ int main(int argc, char* argv[])
 			
 			// Send the ciphertext, checking for string null termination
 			if(!cipher_done) {
-				if(ciphertext[i] == '\n') {
+				if(plaintext[i] == '\n') {
 						cipher_done = 1;
 				}
-				cmd.m_data = ciphertext[i]; 
+				cmd.m_data = plaintext[i]; 
 			} else {
 				cmd.m_data = 0;
 			}

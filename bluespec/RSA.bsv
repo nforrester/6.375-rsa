@@ -17,11 +17,12 @@ typedef struct {
 } Command deriving(Bits, Eq);
 
 typedef Server#(Command, BIG_INT) RSAServer;
-typedef enum {PutExpt, GetExpt, Idle} State deriving (Bits, Eq);
+typedef enum {PutExpt, GetExpt, Idle, Reset} State deriving (Bits, Eq);
 
 module mkRSA (RSAServer);
 
-		Reg#(State) state <- mkReg(Idle);
+		Reg#(State) state <- mkReg(Reset);
+		Reg#(Bit#(32)) hack <- mkReg(0);
 
 		// Concatenates chunks into one big BIG_INT
 		function BIG_INT toBigInt(Vector#(PACKET_COUNT, Reg#(RSA_PACKET)) data);
@@ -49,6 +50,18 @@ module mkRSA (RSAServer);
     
     // Once loading is complete, push data to ModExpt
    
+   	rule reset (hack != 173823);
+   			state <= Idle;
+   			hack <= 173823;
+   			i <= 0;
+   			for(Integer j = 0; j < valueOf(PACKET_COUNT); j = j + 1) begin
+   				data_buffer[j] <= 0;
+   				exponent_buffer[j] <= 0;
+   				modulus_buffer[j] <= 0;
+   			end
+   			
+  	endrule
+   
     rule pushExpt(state == PutExpt);
 
     		Vector#(3, BIG_INT) packet;
@@ -61,9 +74,9 @@ module mkRSA (RSAServer);
     		$display("Loaded modexpt");
     		
     		// Perform the calculation
-    		$display("Data", packet[0]);
-    		$display("Mod", packet[2]);
-    		$display("Exponent", packet[1]);
+    		$display("Data %X", packet[0]);
+    		$display("Mod %X", packet[2]);
+    		$display("Exponent %X", packet[1]);
     		modexpt.request.put(packet);
     		
     		// Allow further loads
@@ -79,15 +92,17 @@ module mkRSA (RSAServer);
   			state <= Idle;
   	endrule
     
-    // Store data from SceMi inside a buffer
+    // Store data from SceMi inside a buffer (MSB ... LSB format)
     interface Put request;
         method Action put(Command cmd);
+        		
         		data_buffer[i] <= cmd.data;
         		exponent_buffer[i] <= cmd.exponent;
         		modulus_buffer[i] <= cmd.modulus;
         		
+        		$display("State", state);
         		$display("Got packet", i, " out of ", (valueOf(TDiv#(BI_SIZE, RSA_PACKET_SIZE)) - 1) );
-        		$display("Mod ", cmd.modulus, " Data ", cmd.data, " Exponent ", cmd.exponent);
+        		$display("Mod %X Data %X Exponent %X", cmd.modulus, cmd.data, cmd.exponent);
 
         		// Keep storing data into memory until we have the entire set
         		// Then stall until processing is complete
