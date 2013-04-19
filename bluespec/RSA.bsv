@@ -61,6 +61,9 @@ module mkRSA (RSAServer);
     		$display("Loaded modexpt");
     		
     		// Perform the calculation
+    		$display("Data", packet[0]);
+    		$display("Mod", packet[2]);
+    		$display("Exponent", packet[1]);
     		modexpt.request.put(packet);
     		
     		// Allow further loads
@@ -83,11 +86,12 @@ module mkRSA (RSAServer);
         		exponent_buffer[i] <= cmd.exponent;
         		modulus_buffer[i] <= cmd.modulus;
         		
-        		$display("Wrote packet", i, " mod ", cmd.modulus, " out of ", (valueOf(TDiv#(BI_SIZE, RSA_PACKET_SIZE)) - 1) );
+        		$display("Got packet", i, " out of ", (valueOf(TDiv#(BI_SIZE, RSA_PACKET_SIZE)) - 1) );
+        		$display("Mod ", cmd.modulus, " Data ", cmd.data, " Exponent ", cmd.exponent);
 
         		// Keep storing data into memory until we have the entire set
         		// Then stall until processing is complete
-        		if(i < fromInteger((valueOf(TDiv#(BI_SIZE, RSA_PACKET_SIZE)) - 1)) ) begin // FIX THIS TO BE PARAMETRIZABLE
+        		if(i < fromInteger((valueOf(TDiv#(BI_SIZE, RSA_PACKET_SIZE)) - 1)) ) begin
         			i <= i + 1;
         		end else begin
         			$display("Done loading");

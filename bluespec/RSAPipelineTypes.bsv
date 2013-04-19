@@ -26,10 +26,7 @@ typedef TMul#(NUM_BITS_IN_CHUNK,0)  B_0;
 typedef TMul#(NUM_BITS_IN_CHUNK,1)  E_0;
 typedef TMul#(NUM_BITS_IN_CHUNK,2)  N_0;
 typedef TMul#(NUM_BITS_IN_CHUNK,3)  RES_0;
-<<<<<<< .merge_file_aF7QYd
 
-=======
->>>>>>> .merge_file_GXckfd
 
 interface RSAPipeline;
   interface MemInitIfc memInit;

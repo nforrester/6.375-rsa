@@ -103,10 +103,11 @@ void generate_key(rsa_packet * packet, char **public_key, char **private_key) {
 		exit(1);
 	}
 
+	// Parse the S expression strings
 	gcry_sexp_t public_sexp  = gcry_sexp_nth(r_key, 1);
 	gcry_sexp_t private_sexp = gcry_sexp_nth(r_key, 2);
 	gcry_sexp_t mod_sexp = gcry_sexp_cdr(gcry_sexp_find_token(private_sexp, "n", 1));
-	gcry_sexp_t priv_exp_sexp = gcry_sexp_cdr(gcry_sexp_find_token(private_sexp, "e", 1));
+	gcry_sexp_t priv_exp_sexp = gcry_sexp_find_token(private_sexp, "e", 1);
 	gcry_sexp_t pub_exp_sexp = gcry_sexp_cdr(gcry_sexp_find_token(public_sexp, "e", 1));
 
 	
@@ -122,7 +123,7 @@ void generate_key(rsa_packet * packet, char **public_key, char **private_key) {
 	gcry_mpi_print(GCRYMPI_FMT_USG, packet->priv_exp, 256, &packet->priv_len, privexp_mpi);
 	gcry_mpi_print(GCRYMPI_FMT_USG, packet->pub_exp, 256, &packet->pub_len, pubexp_mpi);  
   
-  //snprintf (modulus, 512, "fmt: %i: %.*s\n", (int)len, (int)len, mod);
+ // printf ("fmt: %i: %.*s\n", (int)len, (int) len, );
 
 	*public_key = sexp_string(public_sexp);
 	*private_key = sexp_string(private_sexp);
@@ -306,7 +307,7 @@ int main(int argc, char* argv[])
 		decrypted = decrypt(private_key, ciphertext);
 		printf("Software-decrypted plain Text:\n%s\n\n", decrypted);
 	
-		char *signature;
+		/*char *signature;
 		signature = sign(private_key, plaintext);
 		printf("Software signature:\n%s\n", signature);
 		
@@ -314,7 +315,7 @@ int main(int argc, char* argv[])
 			printf("Software signature GOOD!\n");
 		} else {
 			printf("Software signature BAD!\n");
-		}
+		}*/
 		
     printf("Sending to FPGA..\n");
     
@@ -324,7 +325,7 @@ int main(int argc, char* argv[])
 		for(i = 0; i < packet.mod_len; i++) {
 			cmd.m_modulus = packet.mod[i];
 			
-			// Send the 
+			// Send the data for decryption
 			if(i < packet.priv_len) {
 				cmd.m_exponent = packet.priv_exp[i];
 			} else {
