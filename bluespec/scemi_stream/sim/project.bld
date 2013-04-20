@@ -1,6 +1,6 @@
 [DEFAULT]
 default-targets:     bsim_dut tb
-bsc-compile-options: -aggressive-conditions -keep-fires
+bsc-compile-options: -aggressive-conditions -keep-fires --steps 1000000000
 bsc-link-options:    -keep-fires
 
 [common]

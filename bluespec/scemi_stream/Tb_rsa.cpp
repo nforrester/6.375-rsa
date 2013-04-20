@@ -15,9 +15,11 @@ typedef struct {
   unsigned char mod[256];
   unsigned char priv_exp[256];
   unsigned char pub_exp[256];
+  unsigned char ciphertext[256];
   size_t mod_len;
   size_t priv_len;
   size_t pub_len;
+  size_t cipher_len;
 } rsa_packet;
 
 void timer_start(struct timeval *start) {
@@ -129,7 +131,7 @@ void generate_key(rsa_packet * packet, char **public_key, char **private_key) {
 	*private_key = sexp_string(private_sexp);
 }
 
-char* encrypt(char *public_key, char *plaintext){
+char* encrypt(rsa_packet * packet, char *public_key, char *plaintext){
 	gcry_error_t error;
 
 	gcry_mpi_t r_mpi;
@@ -154,7 +156,11 @@ char* encrypt(char *public_key, char *plaintext){
 		exit(1);
 	}
 	timer_poll("libgcrypt    Encrypt: %d.%06d    seconds\n", &timer);
-
+	
+	gcry_sexp_t cipher_sexp = gcry_sexp_cdr(gcry_sexp_find_token(r_ciph, "a", 1));
+	gcry_mpi_t cipher_mpi = gcry_sexp_nth_mpi(cipher_sexp, 0, GCRYMPI_FMT_USG);
+	gcry_mpi_print(GCRYMPI_FMT_USG, packet->ciphertext, 256, &packet->cipher_len, cipher_mpi);  
+	
 	return sexp_string(r_ciph);
 }
 
@@ -292,7 +298,8 @@ int main(int argc, char* argv[])
 			for(i = 0; i < packet.pub_len; i++) {
 		  	printf("%02X", packet.pub_exp[i]);
 		  }
-		  
+
+
 		printf("Public Key:\n%s\n", public_key);
 		printf("Private Key:\n%s\n", private_key);
 	
@@ -300,8 +307,14 @@ int main(int argc, char* argv[])
 		printf("Plain Text:\n%s\n\n", plaintext);
 	
 		char *ciphertext;
-		ciphertext = encrypt(public_key, plaintext);
+		ciphertext = encrypt(&packet, public_key, plaintext);
 		printf("Software-calculated cipher Text:\n%s\n", ciphertext);
+	
+		    printf("\nCiphertext: %i\n", packet.pub_len);
+			for(i = 0; i < packet.cipher_len; i++) {
+		  	printf("%02X", packet.ciphertext[i]);
+		  }		  
+	
 	
 		char *decrypted;
 		decrypted = decrypt(private_key, ciphertext);
@@ -323,7 +336,7 @@ int main(int argc, char* argv[])
 		// Pack the command for transport to FPGA
 		// Command is specified in Command.h, run build and look in tbinclude
 		// Assuming mod_len >> priv_len/pub_len/len(ciphertext)
-		for(i = 0; i < packet.mod_len; i++) {
+		for(i = packet.mod_len - 1; i >= 0; i--) {
 			cmd.m_modulus = packet.mod[i];
 			
 			// Send the data for decryption
@@ -333,27 +346,25 @@ int main(int argc, char* argv[])
 				cmd.m_exponent = 0;
 			}
 			
-			// Send the ciphertext, checking for string null termination
-			if(!cipher_done) {
-				if(plaintext[i] == '\n') {
-						cipher_done = 1;
-				}
-				cmd.m_data = plaintext[i]; 
+			// Since the exponent is short, pack it backwards
+			if((i) < packet.cipher_len) {
+				cmd.m_data = packet.ciphertext[i];
 			} else {
 				cmd.m_data = 0;
 			}
+			
 			printf("Sending message %i, mod: %X\n", i, packet.mod[i]);
     	inport.sendMessage(cmd);
 		}
 		
-		while(i < 127) {
+		/*while(i > 127) {
 			printf("Sending padding %i", i);
 			cmd.m_modulus = 0;
 			cmd.m_exponent = 0;
 			cmd.m_data = 0;
 			inport.sendMessage(cmd);
 			i++;
-		}
+		}*/
 		
 		 printf("Getting result..");
 		
