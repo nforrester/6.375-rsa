@@ -10,13 +10,16 @@
 #define GCRYPT_NO_DEPRECATED
 #include <gcrypt.h>
 
+// RSA raw data packet to send to FPGA
 typedef struct {
   unsigned char mod[256];
   unsigned char priv_exp[256];
   unsigned char pub_exp[256];
+  unsigned char ciphertext[256];
   size_t mod_len;
   size_t priv_len;
   size_t pub_len;
+  size_t cipher_len;
 } rsa_packet;
 
 void timer_start(struct timeval *start) {
@@ -95,13 +98,14 @@ void generate_key(rsa_packet * packet, char **public_key, char **private_key) {
 	gcry_error_t error;
 	int i;
 	// Generate a reduced strength (to save time) RSA key, 1024 bits long
-	gcry_sexp_t params = sexp_new("(genkey (rsa (transient-key) (nbits 4:1024)))");
+	gcry_sexp_t params = sexp_new( "(genkey (rsa (transient-key) (nbits 4:1024)))" );
 	gcry_sexp_t r_key;
 	if ((error = gcry_pk_genkey(&r_key, params))) {
 		printf("Error in gcry_pk_genkey(): %s\nSource: %s\n", gcry_strerror(error), gcry_strsource(error));
 		exit(1);
 	}
 
+	// Parse the S expression strings
 	gcry_sexp_t public_sexp  = gcry_sexp_nth(r_key, 1);
 	gcry_sexp_t private_sexp = gcry_sexp_nth(r_key, 2);
 	gcry_sexp_t mod_sexp = gcry_sexp_cdr(gcry_sexp_find_token(private_sexp, "n", 1));
@@ -121,13 +125,13 @@ void generate_key(rsa_packet * packet, char **public_key, char **private_key) {
 	gcry_mpi_print(GCRYMPI_FMT_USG, packet->priv_exp, 256, &packet->priv_len, privexp_mpi);
 	gcry_mpi_print(GCRYMPI_FMT_USG, packet->pub_exp, 256, &packet->pub_len, pubexp_mpi);  
   
-  //snprintf (modulus, 512, "fmt: %i: %.*s\n", (int)len, (int)len, mod);
+ // printf ("fmt: %i: %.*s\n", (int)len, (int) len, );
 
 	*public_key = sexp_string(public_sexp);
 	*private_key = sexp_string(private_sexp);
 }
 
-char* encrypt(char *public_key, char *plaintext){
+char* encrypt(rsa_packet * packet, char *public_key, char *plaintext){
 	gcry_error_t error;
 
 	gcry_mpi_t r_mpi;
@@ -152,7 +156,11 @@ char* encrypt(char *public_key, char *plaintext){
 		exit(1);
 	}
 	timer_poll("libgcrypt    Encrypt: %d.%06d    seconds\n", &timer);
-
+	
+	gcry_sexp_t cipher_sexp = gcry_sexp_cdr(gcry_sexp_find_token(r_ciph, "a", 1));
+	gcry_mpi_t cipher_mpi = gcry_sexp_nth_mpi(cipher_sexp, 0, GCRYMPI_FMT_USG);
+	gcry_mpi_print(GCRYMPI_FMT_USG, packet->ciphertext, 256, &packet->cipher_len, cipher_mpi);  
+	
 	return sexp_string(r_ciph);
 }
 
@@ -179,7 +187,8 @@ char* decrypt(char *private_key, char *ciphertext){
 		exit(1);
 	}
 
-	return plaintext;
+	// Return type hack
+	return (char *) plaintext;
 }
 
 char* sign(char *private_key, char *document){
@@ -247,6 +256,11 @@ short verify(char *public_key, char *document, char *signature){
 
 int main(int argc, char* argv[])
 {
+		rsa_packet packet;
+		int i;
+		bool cipher_done = 0;
+		Command cmd;
+	
     int sceMiVersion = SceMi::Version( SCEMI_VERSION_STRING );
     SceMiParameters params("scemi.params");
     SceMi *sceMi = SceMi::Init(sceMiVersion, &params);
@@ -258,14 +272,12 @@ int main(int argc, char* argv[])
     InportProxyT<Command> inport ("", "scemi_rsaxactor_req_inport", sceMi);
 
     // Initialize the SceMi outport
-    OutportQueueT<Value> outport ("", "scemi_rsaxactor_resp_outport", sceMi);
+    OutportQueueT<BIG_INT> outport ("", "scemi_rsaxactor_resp_outport", sceMi);
 
     ShutdownXactor shutdown("", "scemi_shutdown", sceMi);
 
     // Service SceMi requests
     SceMiServiceThread *scemi_service_thread = new SceMiServiceThread (sceMi);
-
-    Command cmd;
 
 		char *public_key, *private_key;
 	
@@ -274,19 +286,20 @@ int main(int argc, char* argv[])
 			
 			printf("Raw data dump\n Modulus length: %i\n", packet.mod_len);
 			for(i = 0; i < packet.mod_len; i++) {
-		  	printf("%X", packet.mod[i]);
+		  	printf("%02X", packet.mod[i]);
 		  }
 		  
 		  printf("\nPrivate exponent length: %i\n", packet.priv_len);
 			for(i = 0; i < packet.priv_len; i++) {
-		  	printf("%X", packet.priv_exp[i]);
+		  	printf("%02X", packet.priv_exp[i]);
 		  }
 		  
 		    printf("\nPublic exponent length: %i\n", packet.pub_len);
 			for(i = 0; i < packet.pub_len; i++) {
-		  	printf("%X", packet.pub_exp[i]);
+		  	printf("%02X", packet.pub_exp[i]);
 		  }
-		  
+
+
 		printf("Public Key:\n%s\n", public_key);
 		printf("Private Key:\n%s\n", private_key);
 	
@@ -294,14 +307,20 @@ int main(int argc, char* argv[])
 		printf("Plain Text:\n%s\n\n", plaintext);
 	
 		char *ciphertext;
-		ciphertext = encrypt(public_key, plaintext);
+		ciphertext = encrypt(&packet, public_key, plaintext);
 		printf("Software-calculated cipher Text:\n%s\n", ciphertext);
+	
+		    printf("\nCiphertext length: %i\n", packet.cipher_len);
+			for(i = 0; i < packet.cipher_len; i++) {
+		  	printf("%02X", packet.ciphertext[i]);
+		  }		  
+	
 	
 		char *decrypted;
 		decrypted = decrypt(private_key, ciphertext);
-		printf("Software-decrypted plain Text:\n%s\n\n", decrypted);
+		printf("\nSoftware-decrypted plain Text:\n%s\n\n", decrypted);
 	
-		char *signature;
+		/*char *signature;
 		signature = sign(private_key, plaintext);
 		printf("Software signature:\n%s\n", signature);
 		
@@ -309,17 +328,48 @@ int main(int argc, char* argv[])
 			printf("Software signature GOOD!\n");
 		} else {
 			printf("Software signature BAD!\n");
-		}
-
+		}*/
 		
-   /* cmd.the_tag = Command::tag_Operate;
-    cmd.m_Operate.m_val = val;
-    cmd.m_Operate.m_op = operationof(op);
+    printf("Sending to FPGA..\n");
 
-    printf("Sending to FPGA..");
-    inport.sendMessage(cmd);
-    outport.getMessage();
-*/
+    
+		// Pack the command for transport to FPGA
+		// Command is specified in Command.h, run build and look in tbinclude
+		// Assuming mod_len >> priv_len/pub_len/len(ciphertext)
+		for(i = 0; i < packet.mod_len; i++) {
+			cmd.m_modulus = packet.mod[packet.mod_len - i - 1];
+			
+			// Send the data for decryption
+			if(i < packet.priv_len) {
+				cmd.m_exponent = packet.priv_exp[packet.priv_len - i - 1];
+			} else {
+				cmd.m_exponent = 0;
+			}
+			
+			// Since the exponent is short, pack it backwards
+			if(i < packet.cipher_len) {
+				cmd.m_data = packet.ciphertext[packet.cipher_len - i - 1];
+			} else {
+				cmd.m_data = 0;
+			}
+			
+			printf("Sending message %i, mod: %X coeff: %X data:%X\n", i, cmd.m_data.get(), cmd.m_exponent.get(), cmd.m_data.get());
+    	inport.sendMessage(cmd);
+		}
+		
+		/*while(i > 127) {
+			printf("Sending padding %i", i);
+			cmd.m_modulus = 0;
+			cmd.m_exponent = 0;
+			cmd.m_data = 0;
+			inport.sendMessage(cmd);
+			i++;
+		}*/
+		
+		 printf("Getting result..");
+		
+    std::cout << "Result: " << outport.getMessage() << std::endl;
+
     std::cout << "shutting down..." << std::endl;
     shutdown.blocking_send_finish();
     scemi_service_thread->stop();
