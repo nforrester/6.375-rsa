@@ -94,6 +94,7 @@ module mkRSA (RSAServer);
   		  let r <- modexpt.response.get();
   	    $display("Got modexpt");
   			outfifo.enq(r);
+  			i <= 0;
   			state <= Idle;
   	endrule
     

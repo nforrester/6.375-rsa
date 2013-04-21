@@ -310,7 +310,7 @@ int main(int argc, char* argv[])
 		ciphertext = encrypt(&packet, public_key, plaintext);
 		printf("Software-calculated cipher Text:\n%s\n", ciphertext);
 	
-		    printf("\nCiphertext: %i\n", packet.pub_len);
+		    printf("\nCiphertext length: %i\n", packet.cipher_len);
 			for(i = 0; i < packet.cipher_len; i++) {
 		  	printf("%02X", packet.ciphertext[i]);
 		  }		  
@@ -318,7 +318,7 @@ int main(int argc, char* argv[])
 	
 		char *decrypted;
 		decrypted = decrypt(private_key, ciphertext);
-		printf("Software-decrypted plain Text:\n%s\n\n", decrypted);
+		printf("\nSoftware-decrypted plain Text:\n%s\n\n", decrypted);
 	
 		/*char *signature;
 		signature = sign(private_key, plaintext);
@@ -336,24 +336,24 @@ int main(int argc, char* argv[])
 		// Pack the command for transport to FPGA
 		// Command is specified in Command.h, run build and look in tbinclude
 		// Assuming mod_len >> priv_len/pub_len/len(ciphertext)
-		for(i = packet.mod_len - 1; i >= 0; i--) {
-			cmd.m_modulus = packet.mod[i];
+		for(i = 0; i < packet.mod_len; i++) {
+			cmd.m_modulus = packet.mod[packet.mod_len - i - 1];
 			
 			// Send the data for decryption
 			if(i < packet.priv_len) {
-				cmd.m_exponent = packet.priv_exp[i];
+				cmd.m_exponent = packet.priv_exp[packet.priv_len - i - 1];
 			} else {
 				cmd.m_exponent = 0;
 			}
 			
 			// Since the exponent is short, pack it backwards
-			if((i) < packet.cipher_len) {
-				cmd.m_data = packet.ciphertext[i];
+			if(i < packet.cipher_len) {
+				cmd.m_data = packet.ciphertext[packet.cipher_len - i - 1];
 			} else {
 				cmd.m_data = 0;
 			}
 			
-			printf("Sending message %i, mod: %X\n", i, packet.mod[i]);
+			printf("Sending message %i, mod: %X coeff: %X data:%X\n", i, cmd.m_data.get(), cmd.m_exponent.get(), cmd.m_data.get());
     	inport.sendMessage(cmd);
 		}
 		
