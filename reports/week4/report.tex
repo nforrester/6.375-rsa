@@ -307,6 +307,23 @@ the maximum frequency we can support mapped to the device is 25MHz.
 In week 5, we will investigate timing violations and
 modify our modules to operate on chunks of date (pipelining the design).  
 
+While more detailed study of the synthesis reports will be needed to confirm this,
+we believe that by far the greatest contributor to the critical path in the design are 1024 bit ripple-carry adders.
+As such, in order to increase the clock frequency, we'll have to break these into sections.
+These adders only occur in the modular multiplication module, and incidentally,
+this module is where the vast majority of execution time is spent.
+If an adder were broken into 4 chunks (for example) then it might take up to 13 or 14 (correspondingly shorter)
+clock cycles to complete one iteration of the modular multiplier.
+
+However, this suggests that a modular multiplier might be able to perform multiple computations in parallel.
+It would be quite a bit of work to arrange,
+but we might be able to have several computations cycling through the circular pipeline at once.
+Each would have to be assigned a nonce in order to properly reorder results as they come out,
+but there's no reason in principle that a single modular multiplier couldn't perform all the computations
+for several independent modular exponentiators in parallel.
+Naturally though, this goes somewhat beyond the original scope of the project,
+and as we are all busy we hesitate to commit to taking on ever more complex tasks.
+
 \section{Verification}
 To verify the functionality of the RSA module, we initially separately 
 compare the results of the encryption and decryption blocks to the results
