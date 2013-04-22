@@ -82,9 +82,11 @@ and collecting the results.
 
 The only remaining problem is performing multiplication, modulo, and bit shifting
 on integers that are thousands of bits long.
-If it turns out to be practical to simply instantiate registers of types like {\tt Int\#(1024)},
-and perform combinational operations on them by writing {\tt a~*~b}, {\tt a~\%~m}, and {\tt a~>>~1}, but it 
-appears that this is not the case. The timing violations require us to handle large integers in smaller chunks.
+If it had turned out to be practical to simply instantiate registers of types like {\tt Int\#(1024)},
+and perform combinational operations on them by writing {\tt a~*~b}, {\tt a~\%~m}, and {\tt a~>>~1},
+then that would have been fantastic.
+However, it appears that this is not the case.
+The timing violations require us to handle large integers in smaller chunks.
 
 Upon further reflection however, we believe that a compromise approach will be most practical.
 Our current plan is to instantiate registers of types like {\tt Int\#(1024)}, and operate on those.
@@ -281,7 +283,7 @@ which would defined by
 cycles_{best}=N\cdot (N+1)
 \end{equation}
 
-For a 32-bit chunk size, this would necessitate a clock speed of 5 Mhz to meet the
+For a 32-bit chunk size, this would necessitate a clock speed of 5 MHz to meet the
 performance of the Raspberry Pi.
 
 The average case is similar in performance to the best case. In an empirical benchmark
@@ -298,26 +300,27 @@ it is possible to optimize the processing requirements on the required compariso
 modular multiply. It may be possible to explore faster comparison architectures by saving intermediate 
 results from previous cycles.
 
-\subsection{Design Exploration Plan}
+\subsection{Design Exploration}
 One of the major trade offs in our design is cycle period and number of cycles per encryption/decryption. 
- During our preliminary synthesis exploration, we have found that we cannot run the operation unpipelined on the FPGA: the 
-maximum frequency we can support mapped to the device is 25Mhz. In week 5, we will investigate timing violations and
+During our preliminary synthesis exploration, we found that we cannot run the operation unpipelined on the FPGA:
+the maximum frequency we can support mapped to the device is 25MHz.
+In week 5, we will investigate timing violations and
 modify our modules to operate on chunks of date (pipelining the design).  
 
 \section{Verification}
 To verify the functionality of the RSA module, we initially separately 
 compare the results of the encryption and decryption blocks to the results
 of a software implementation. The two private keys for encryption and
-decryption modules will be passed by SceMi into the hardware. A SceMi testbench will
-push a message to the encryption block, along with an enable signal, message,
-and public key of the software test-bench. The module will generate an encrypted message,
-and the software test-bench will use its private key to decrypt and verify the 
+decryption modules are passed by SceMi into the hardware. A SceMi testbench
+pushes a message to the encryption block, along with an enable signal, message,
+and public key of the software test-bench. The module generates an encrypted message,
+and the software test-bench uses its private key to decrypt and verify the 
 correctness of the encrypted message.
 
-For decryption, the process is reversed: the test-bench will pass in an 
-encrypted message instead of plain-text, and the decryption module will use
+For decryption, the process is reversed: the test-bench passes in an 
+encrypted message instead of plain-text, and the decryption module uses
 the private key of the software test-bench to decrypt the message. The test-bench
-will verify the plain-text for correctness.
+verifies the plain-text for correctness.
 
 After individual testing of the blocks, we will add support for confirming the signature
 (authenticity checking) of the transmitted message. The test-bench will hash the plain-text
