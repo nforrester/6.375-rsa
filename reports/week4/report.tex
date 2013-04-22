@@ -83,17 +83,8 @@ and collecting the results.
 The only remaining problem is performing multiplication, modulo, and bit shifting
 on integers that are thousands of bits long.
 If it turns out to be practical to simply instantiate registers of types like {\tt Int\#(1024)},
-and perform combinational operations on them by writing {\tt a~*~b}, {\tt a~\%~m}, and {\tt a~>>~1},
-then that's fantastic.
-We will investigate this possibility.
-
-Unfortunately, we suspect that this may consume a tremendous amount of area,
-introduce long combinational delays, or cause other undesirable behavior.
-If so, then it will be necessary to handle large integers in smaller chunks.
-We will then be free to implement algorithms for arithmetic operations
-which operate on only a small number of bits at a time. In particular, we can 
-explore the redundant interleaved modular exponentiation algorithm, which does
-not perform full length (1024x1024) multiplication. 
+and perform combinational operations on them by writing {\tt a~*~b}, {\tt a~\%~m}, and {\tt a~>>~1}, but it 
+appears that this is not the case. The timing violations require us to handle large integers in smaller chunks.
 
 Upon further reflection however, we believe that a compromise approach will be most practical.
 Our current plan is to instantiate registers of types like {\tt Int\#(1024)}, and operate on those.
@@ -158,8 +149,7 @@ only bit shifts, adders, and comparators, which shouldn't take up much area. How
 comparisons and arithmetic on long bit lengths will adversely affect the cycle time of the design.
 In performance critical modules, like the modular multiplier, it will be highly beneficial
 to operate on the string in chunks: for example, the 64 hardware DSP48 blocks can synthesize
-a long add/subtract chain using internal routing resources. We will investigate the complexity vs. performance
-tradeoff during hardware exploration this week.
+a long add/subtract chain using internal routing resources. 
 
 \begin{figure}
   \begin{centering}
@@ -233,16 +223,21 @@ Since the main focus of our project is divided between the two important modules
 
 
 \subsection{Implemented Modules}
-The modules we implemented are:  {\tt SceMiLayer.bsv, RSAPipeline.bsv, RSAPipelinetypes.bsv,  ModMultIlvd.bsv, ModExpt.bsv, Memory.bsv}
+The modules we implemented are:  {\tt SceMiLayer.bsv, RSAPipeline.bsv, RSA.bsv, RSAPipelinetypes.bsv,  ModMultIlvd.bsv, ModExpt.bsv, Memory.bsv}
 
 \begin{description}
   \item[SceMiLayer.bsv] We developed two SceMiLayer modules to test different types of designs: one for importing vmh files, and another for importing libgcrypt for simulating our c code.  
   \item[RSAPipeline.bsv] This pipeline is based off the audio pipeline in the previous labs.  It's interfaces with SceMiLayer to retrieve input data and push output data to the test bench.
   \item[RSAPipelinetypes.bsv] This is the general header file where we define all constant values.  This will make the overall product modular and easy for others to change core elements of design such as number of bits per chunk.
+  \item{RSA.bsv} This is a dedicated alternative driver for the RSA module that performs cosimulation with libgcrypt
   \item[ModMultIlvd.bsv] The interleaved modulus multiplier based on the Montgomery Algorithm.  This function computes $a*b$ mod $m$.
   \item[ModExpt.bsv] The modulus exponentiator described in section ?.  This module created two modulus multiplier to computer $b^e$ mod $m$.
   \item[Memory.bsv] This memory module implements BRAM functions: initialize, put, and get.  
 \end{description}
+
+The system is presently working correctly for 1024 bit RSA operations in simulation. The design performs software co-simulation using libgcrypt: the robust software library
+ performs the same operations as the hardware RSA module, and compares the results at intermediate steps. It takes approximately 30 seconds to simulate one RSA operation, and
+it is possible to perform randomized, long-term verification of the target module. 
 
 \subsection{Integer Representation Explorations}
 \begin{enumerate}
@@ -305,15 +300,15 @@ results from previous cycles.
 
 \subsection{Design Exploration Plan}
 One of the major trade offs in our design is cycle period and number of cycles per encryption/decryption. 
-Because of this, we will need to investigate using different chunk sizes to find the most efficient design. We will
-run overnight synthesis runs to determine the maximum possible routable block size that will meet timing during
-Week 4.
+ During our preliminary synthesis exploration, we have found that we cannot run the operation unpipelined on the FPGA: the 
+maximum frequency we can support mapped to the device is 25Mhz. In week 5, we will investigate timing violations and
+modify our modules to operate on chunks of date (pipelining the design).  
 
 \section{Verification}
-To verify the functionality of the RSA module, we will initially separately 
+To verify the functionality of the RSA module, we initially separately 
 compare the results of the encryption and decryption blocks to the results
 of a software implementation. The two private keys for encryption and
-decryption modules will be burned into the hardware. A SceMi testbench will
+decryption modules will be passed by SceMi into the hardware. A SceMi testbench will
 push a message to the encryption block, along with an enable signal, message,
 and public key of the software test-bench. The module will generate an encrypted message,
 and the software test-bench will use its private key to decrypt and verify the 
