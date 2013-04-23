@@ -28,10 +28,9 @@ module mkRSA (RSAServer);
 		function BIG_INT toBigInt(Vector#(PACKET_COUNT, Reg#(RSA_PACKET)) data);
 			BIG_INT result = 0;
 			
-			/*// Reverse the packet count (remove this for other purposes)
-			for(Integer i = 0; i < valueOf(PACKET_COUNT); i = i + 1) begin
-				data[i] = data[valueOf(PACKET_COUNT) - i - 1];
-			end*/
+			/*// Reverse the packet count (remove this for other purposes) for(Integer 
+			i = 0; i < valueOf(PACKET_COUNT); i = i + 1) begin data[i] = 
+			data[valueOf(PACKET_COUNT) - i - 1]; end*/
 			
 			for(Integer i = 0; i < valueOf(BI_SIZE); i = i + 1) begin
 				Integer chunk_id = (i * valueOf(PACKET_COUNT)) / valueOf(BI_SIZE);

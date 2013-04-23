@@ -109,7 +109,7 @@ void generate_key(rsa_packet * packet, char **public_key, char **private_key) {
 	gcry_sexp_t public_sexp  = gcry_sexp_nth(r_key, 1);
 	gcry_sexp_t private_sexp = gcry_sexp_nth(r_key, 2);
 	gcry_sexp_t mod_sexp = gcry_sexp_cdr(gcry_sexp_find_token(private_sexp, "n", 1));
-	gcry_sexp_t priv_exp_sexp = gcry_sexp_cdr(gcry_sexp_find_token(private_sexp, "e", 1));
+	gcry_sexp_t priv_exp_sexp = gcry_sexp_cdr(gcry_sexp_find_token(private_sexp, "d", 1));
 	gcry_sexp_t pub_exp_sexp = gcry_sexp_cdr(gcry_sexp_find_token(public_sexp, "e", 1));
 
 	
@@ -353,6 +353,16 @@ int main(int argc, char* argv[])
 				cmd.m_data = 0;
 			}
 			
+			/*if(i == 0) {
+				cmd.m_modulus = 255;
+				cmd.m_data = 2;
+				cmd.m_exponent = 8;
+			} else {
+				cmd.m_modulus = 0;
+				cmd.m_data = 0;
+				cmd.m_exponent = 0;	
+			}*/
+			
 			printf("Sending message %i, mod: %X coeff: %X data:%X\n", i, cmd.m_data.get(), cmd.m_exponent.get(), cmd.m_data.get());
     	inport.sendMessage(cmd);
 		}
@@ -365,6 +375,12 @@ int main(int argc, char* argv[])
 			inport.sendMessage(cmd);
 			i++;
 		}*/
+			
+			printf("Sending padding, 1 packet");
+			cmd.m_modulus = 0;
+			cmd.m_exponent = 0;
+			cmd.m_data = 0;
+			inport.sendMessage(cmd);
 		
 		 printf("Getting result..");
 		
