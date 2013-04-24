@@ -49,7 +49,9 @@ module mkRSAPipeline(RSAPipeline);
 
   rule init(memory.init.done() && !hack);
       hack <= True;
- //     state <= 0;
+      $display("ZERO CHECK: put_counter = %d ", put_counter); 
+      $finish();
+      //     state <= 0;
       put_var <= PutB;
       get_var <= GetB;
       put_counter <= 0;

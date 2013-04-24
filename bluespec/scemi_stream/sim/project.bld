@@ -34,6 +34,6 @@ build-for: c++
 c++-header-directory: tbinclude
 c++-options: -lgcrypt
 c++-header-aliases
-c++-files: ../Tb_rsa.cpp
+c++-files: ../Tb_rsa.cpp ../ResetXactor.cpp
 exe-file: tb
 

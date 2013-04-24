@@ -59,10 +59,6 @@ module mkModExpt(ModExpt);
   Reg#(State) state <- mkReg(Done);
 	Reg#(Bool) hack <-mkReg(False);
 
-<<<<<<< HEAD
-=======
-
->>>>>>> balbekov/master
   rule init(!hack);
     hack <= True;
     b <= 0;
@@ -72,10 +68,6 @@ module mkModExpt(ModExpt);
     state <= Done;
   endrule
 
-<<<<<<< HEAD
-=======
-
->>>>>>> balbekov/master
 	rule start(hack&& state == Done);
    // $display("modExpt \t\t Start");
     let packet_in = inputFIFO.first();
@@ -94,12 +86,6 @@ module mkModExpt(ModExpt);
 	rule putMult(state == PutMult);
  //   $display("modExpt \t\t PutMult");
     Vector#(3, BIG_INT) packet_out = ?;
-<<<<<<< HEAD
-		
-=======
-
-
->>>>>>> balbekov/master
 		if(e == 0) begin
 			outputFIFO.enq(c);
       state <= Done;
@@ -126,26 +112,13 @@ module mkModExpt(ModExpt);
     let next_b = ?;
     let next_e = ?;
 
-<<<<<<< HEAD
-=======
 
->>>>>>> balbekov/master
     if((e & fromInteger(1)) == fromInteger(1)) begin
 			BIG_INT r1 <- modmult1.response.get();
       next_c = r1;
 			c <= r1;
 		end
     else next_c = c;
-<<<<<<< HEAD
-		
-		BIG_INT r0 <- modmult0.response.get();
-		b <= r0;
-    next_b = r0;
-		
-		e <= e >>1;
-    next_e = e >> 1;
-
-=======
 
 
 		BIG_INT r0 <- modmult0.response.get();
@@ -157,7 +130,6 @@ module mkModExpt(ModExpt);
     next_e = e >> 1;
 
 
->>>>>>> balbekov/master
     
  //   $display("modExpt \t\t GetMult\t\tb=%d\tc=%d\te=%d",next_b,next_c,next_e);
     state <= PutMult;

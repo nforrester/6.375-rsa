@@ -10,6 +10,11 @@
 #define GCRYPT_NO_DEPRECATED
 #include <gcrypt.h>
 
+#include "ResetXactor.h"
+
+
+
+
 // RSA raw data packet to send to FPGA
 typedef struct {
   unsigned char mod[256];
@@ -274,27 +279,29 @@ int main(int argc, char* argv[])
     // Initialize the SceMi outport
     OutportQueueT<BIG_INT> outport ("", "scemi_rsaxactor_resp_outport", sceMi);
 
+    ResetXactor reset("", "scemi", sceMi);
     ShutdownXactor shutdown("", "scemi_shutdown", sceMi);
 
     // Service SceMi requests
     SceMiServiceThread *scemi_service_thread = new SceMiServiceThread (sceMi);
 
+    reset.reset();
 		char *public_key, *private_key;
 	
 		printf("Generating keypair in software...");
 		generate_key(&packet, &public_key, &private_key);
 			
-			printf("Raw data dump\n Modulus length: %i\n", packet.mod_len);
+			printf("Raw data dump\n Modulus length: %zi\n", packet.mod_len);
 			for(i = 0; i < packet.mod_len; i++) {
 		  	printf("%02X", packet.mod[i]);
 		  }
 		  
-		  printf("\nPrivate exponent length: %i\n", packet.priv_len);
+		  printf("\nPrivate exponent length: %zi\n", packet.priv_len);
 			for(i = 0; i < packet.priv_len; i++) {
 		  	printf("%02X", packet.priv_exp[i]);
 		  }
 		  
-		    printf("\nPublic exponent length: %i\n", packet.pub_len);
+		    printf("\nPublic exponent length: %zi\n", packet.pub_len);
 			for(i = 0; i < packet.pub_len; i++) {
 		  	printf("%02X", packet.pub_exp[i]);
 		  }
@@ -310,7 +317,7 @@ int main(int argc, char* argv[])
 		ciphertext = encrypt(&packet, public_key, plaintext);
 		printf("Software-calculated cipher Text:\n%s\n", ciphertext);
 	
-		    printf("\nCiphertext length: %i\n", packet.cipher_len);
+		    printf("\nCiphertext length: %zi\n", packet.cipher_len);
 			for(i = 0; i < packet.cipher_len; i++) {
 		  	printf("%02X", packet.ciphertext[i]);
 		  }		  

@@ -23,7 +23,7 @@ module mkRSA (RSAServer);
 
 		Reg#(State) state <- mkReg(Reset);
 		Reg#(Bit#(32)) hack <- mkReg(0);
-
+    Reg#(Bit#(32)) zero <- mkReg(0); // for testing if this equals zero!
 		// Concatenates chunks into one big BIG_INT
 		function BIG_INT toBigInt(Vector#(PACKET_COUNT, Reg#(RSA_PACKET)) data);
 			BIG_INT result = 0;
@@ -104,7 +104,7 @@ module mkRSA (RSAServer);
         		data_buffer[i] <= cmd.data;
         		exponent_buffer[i] <= cmd.exponent;
         		modulus_buffer[i] <= cmd.modulus;
-        		
+        	 $display("Zero test =  %d", zero);	
         		$display("State", state);
         		$display("Got packet", i, " out of ", (valueOf(TDiv#(BI_SIZE, RSA_PACKET_SIZE)) - 1) );
         		$display("Mod %X Data %X Exponent %X", cmd.modulus, cmd.data, cmd.exponent);
