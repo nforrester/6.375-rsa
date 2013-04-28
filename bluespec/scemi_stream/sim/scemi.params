@@ -1,4 +1,4 @@
-// Sce-Mi parameters file generated on: Wed Apr 24 18:13:16 EDT 2013
+// Sce-Mi parameters file generated on: Sun Apr 28 17:01:08 EDT 2013
 // By: Bluespec scemilink utility, version 2013.01.beta4 (build 30305, 2013-01-22)
 
 // ObjectKind Index AttributeName Value
@@ -64,4 +64,4 @@ MessageInPort 0 Type           "SceMiSerialProbe::ProbeControl"
 
 Link 0 LinkType   "TCP"
 Link 0 TCPAddress "127.0.0.1"
-Link 0 TCPPort    3375
+Link 0 TCPPort    4321
