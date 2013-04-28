@@ -303,19 +303,16 @@ results from previous cycles.
 \subsection{Design Exploration}
 One of the major trade offs in our design is cycle period and number of cycles per encryption/decryption. 
 During our preliminary synthesis exploration, we found that we cannot run the operation unpipelined on the FPGA:
-the maximum frequency we can support mapped to the device is 25MHz.
-In week 5, we will investigate timing violations and
-modify our modules to operate on chunks of date (pipelining the design).  
+the maximum frequency we can support mapped to the device is 33 MHz.
 
-While more detailed study of the synthesis reports will be needed to confirm this,
-we believe that by far the greatest contributor to the critical path in the design are 1024 bit ripple-carry adders.
-As such, in order to increase the clock frequency, we'll have to break these into sections.
-These adders only occur in the modular multiplication module, and incidentally,
-this module is where the vast majority of execution time is spent.
-If an adder were broken into 4 chunks (for example) then it might take up to 13 or 14 (correspondingly shorter)
-clock cycles to complete one iteration of the modular multiplier.
+The current 33 MHz critical path is due to the 1024 bit ripple-carry adders. If the adder were broken 
+into 4 chunks (for example) then it might take up to 13 or 14 (correspondingly shorter) clock cycles to complete 
+one iteration of the modular multiplier. We have therefore added a pipelined adder to the design, which takes multiple
+cycles to compute the sum of an addition, and returns the result through a FIFO when finished. This does not
+add complexity to the modular multiplier, at the cost of FFs required for the input and output FIFOs. The
+design is presently being synthesized. 
 
-However, this suggests that a modular multiplier might be able to perform multiple computations in parallel.
+This suggests that a modular multiplier might be able to perform multiple computations in parallel.
 It would be quite a bit of work to arrange,
 but we might be able to have several computations cycling through the circular pipeline at once.
 Each would have to be assigned a nonce in order to properly reorder results as they come out,
