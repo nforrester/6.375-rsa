@@ -111,16 +111,17 @@ module mkModMultIlvd(ModMultIlvd);
 
   rule doAdd3(state ==Add3);
   Bit#(513) sum = top_sum + zeroExtend(carry);
-
+  BIG_INT p_tmp = ?;
   for(Integer ptr = 0; ptr < 512; ptr=ptr +1) begin
-      p_val[ptr] <= bottom_sum[ptr];
+      p_tmp[ptr] = bottom_sum[ptr];
     end
 
-    Integer j = 0;
-    for(Integer ptr = 512; ptr < 1025; ptr=ptr+1)begin
-      p_val[ptr] <= sum[j];
+  Integer j = 0;
+  for(Integer ptr = 512; ptr < 1025; ptr=ptr+1)begin
+      p_tmp[ptr] = sum[j];
       j = j +1;
     end
+  p_val <= p_tmp;
 
   state <= PsubM1;
   endrule
