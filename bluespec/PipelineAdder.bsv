@@ -32,6 +32,24 @@ typedef Server#(
 */
 
 
+module mkPipelineAdder(Adder);
+	FIFOF#(Vector#(2, BIG_INT)) inputFIFO <- mkFIFOF();
+  FIFO#(BIG_INT) outputFIFO <- mkFIFO();
+
+  rule doAdd;
+    let in = inputFIFO.first();
+    inputFIFO.deq();
+
+    let res = in[0] + in[1];
+    outputFIFO.enq(res);
+  endrule
+
+  interface Put request = toPut(inputFIFO);
+  interface Get response = toGet(outputFIFO);
+
+endmodule
+
+/*
 typedef enum {Add, Done} State deriving (Bits, Eq);
 
 
@@ -112,9 +130,6 @@ module mkPipelineAdder(Adder);
   interface Put request = toPut(inputFIFO);
   interface Get response = toGet(outputFIFO);
 endmodule
+*/
 
-
-module mkAddTest (Empty);
-  // some unit test
-endmodule
 
