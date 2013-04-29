@@ -27,7 +27,7 @@ module mkModMultIlvd(ModMultIlvd);
   
   Reg#(Maybe#(Bit#(0))) wait_for_add <- mkReg(tagged Invalid);
 	Adder adder <- mkPipelineAdder();
-
+  Reg#(Bool) wait_add <-mkReg(False);
   Reg#(Bool) hack <- mkReg(False);
   
   rule init(!hack);
@@ -62,10 +62,13 @@ module mkModMultIlvd(ModMultIlvd);
     		operands[1] = y_val;
     		
         adder.request.put(operands);
+        wait_add <= True;
         wait_for_add <= tagged Valid 0;
+        p_val <= p_val + y_val;
         end
       else begin
         next_p = p_val;
+        wait_add <= False;
         end
       //$display("doXiY\t\tp = %d", next_p);
         
@@ -82,20 +85,20 @@ module mkModMultIlvd(ModMultIlvd);
     
     // Grab the result from the adder if we're waiting for it
     if(isValid(wait_for_add)) begin
-			let p_val_result <- adder.response.get();
+			p_val_result <- adder.response.get();
 			wait_for_add <= tagged Invalid;
 		end else begin
 			// otherwise just put in the current p_val
 			p_val_result = p_val;
 		end
     
-    if (p_val >= m_val) begin
+    if (p_val_result >= m_val) begin
       next_p = p_val_result - m_val;
       p_val <= next_p;
     end
     
     else begin
-      next_p = p_val;
+      next_p = p_val_result;
     end
     
     state <= PsubM2;
