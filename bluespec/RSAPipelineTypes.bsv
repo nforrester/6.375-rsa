@@ -8,8 +8,13 @@ typedef TDiv#(BI_SIZE,CHUNK_SIZE) NCHUNKS;
 typedef Bit#(BI_SIZE) BIG_INT;
 */
 
+typedef 520 BI_SIZE;
+typedef 520 NUM_BITS_IN_CHUNK;
+
+/*
 typedef 1032 BI_SIZE;
 typedef 1032 NUM_BITS_IN_CHUNK;
+*/
 typedef Bit#(NUM_BITS_IN_CHUNK) CHUNK_T;
 typedef TDiv#(BI_SIZE,NUM_BITS_IN_CHUNK) NCHUNKS;
 typedef Bit#(BI_SIZE) BIG_INT;

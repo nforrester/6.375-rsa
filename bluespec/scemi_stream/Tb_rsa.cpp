@@ -103,7 +103,8 @@ void generate_key(rsa_packet * packet, char **public_key, char **private_key) {
 	gcry_error_t error;
 	int i;
 	// Generate a reduced strength (to save time) RSA key, 1024 bits long
-	gcry_sexp_t params = sexp_new( "(genkey (rsa (transient-key) (nbits 4:1024)))" );
+	gcry_sexp_t params = sexp_new( "(genkey (rsa (transient-key) (nbits 3:512)))" );
+	//gcry_sexp_t params = sexp_new( "(genkey (rsa (transient-key) (nbits 4:1024)))" );
 	gcry_sexp_t r_key;
 	if ((error = gcry_pk_genkey(&r_key, params))) {
 		printf("Error in gcry_pk_genkey(): %s\nSource: %s\n", gcry_strerror(error), gcry_strsource(error));
