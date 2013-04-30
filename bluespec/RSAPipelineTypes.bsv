@@ -1,12 +1,4 @@
 import GetPut::*;
-/*
-typedef 16 BI_SIZE;
-typedef 16 NUM_BITS_IN_CHUNK;
-typedef Bit#(NUM_BITS_IN_CHUNK) CHUNK_T;
-typedef TMul#(8,NUM_BITS_IN_CHUNK) CHUNK_SIZE;
-typedef TDiv#(BI_SIZE,CHUNK_SIZE) NCHUNKS;
-typedef Bit#(BI_SIZE) BIG_INT;
-*/
 
 typedef 520 BI_SIZE;
 typedef 520 NUM_BITS_IN_CHUNK;
@@ -30,6 +22,11 @@ typedef TMul#(NUM_BITS_IN_CHUNK,0)  B_0;
 typedef TMul#(NUM_BITS_IN_CHUNK,1)  E_0;
 typedef TMul#(NUM_BITS_IN_CHUNK,2)  N_0;
 typedef TMul#(NUM_BITS_IN_CHUNK,3)  RES_0;
+
+// Adder types
+typedef 8 ADD_WIDTH; // MUST BE DIVISIBLE INTO BI_SIZE
+typedef TDiv#(BI_SIZE, ADD_WIDTH) ADD_STAGES;
+
 
 interface RSAPipeline;
   interface MemInitIfc memInit;
