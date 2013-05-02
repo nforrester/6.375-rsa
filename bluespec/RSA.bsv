@@ -5,7 +5,7 @@ import ClientServer::*;
 import RSAPipelineTypes::*;
 import Vector::*;
 import ModExpt::*;
-
+import CLAdder::*;
 // Struct to hold RSA packet data
 // (Usually 8 bit)
 // Doesn't make sense (Does it?) to send modulus,
@@ -20,7 +20,7 @@ typedef Server#(Command, BIG_INT) RSAServer;
 typedef enum {PutExpt, GetExpt, Idle, Reset} State deriving (Bits, Eq);
 
 module mkRSA (RSAServer);
-
+   // Empty tester <- mkCLAdderTest();
 		Reg#(State) state <- mkReg(Reset);
 		Reg#(Bit#(32)) hack <- mkReg(0);
     Reg#(Bit#(32)) zero <- mkReg(0); // for testing if this equals zero!

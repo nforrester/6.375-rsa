@@ -5,7 +5,8 @@ import ClientServer::*;
 import GetPut::*;
 import FIFO::*;
 import Vector::*;
-import PipelineAdder::*;
+//import PipelineAdder::*;
+import CLAdder::*;
 
 typedef enum {Shift, XiY, AddPI, PsubM1, PsubM2, Done} State deriving (Bits,Eq);
 typedef Server#(
@@ -26,7 +27,7 @@ module mkModMultIlvd(ModMultIlvd);
   Reg#(State) state <- mkReg(Shift);
   
   Reg#(Maybe#(Bit#(0))) wait_for_add <- mkReg(tagged Invalid);
-	Adder adder <- mkPipelineAdder();
+	Adder adder <- mkCLAdder();
   Reg#(Bool) wait_add <-mkReg(False);
   Reg#(Bool) hack <- mkReg(False);
   
