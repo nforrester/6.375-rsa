@@ -100,7 +100,7 @@ module mkModMultIlvd(ModMultIlvd);
     end
     
     else begin
-      next_p = p_val_result;
+      p_val <= p_val_result;
     end
     
     state <= PsubM2;
