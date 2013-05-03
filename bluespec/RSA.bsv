@@ -5,7 +5,7 @@ import ClientServer::*;
 import RSAPipelineTypes::*;
 import Vector::*;
 import ModExpt::*;
-import CLAdder::*;
+//import CLAdder::*;
 // Struct to hold RSA packet data
 // (Usually 8 bit)
 // Doesn't make sense (Does it?) to send modulus,

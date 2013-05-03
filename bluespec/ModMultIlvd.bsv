@@ -28,6 +28,7 @@ module mkModMultIlvd(ModMultIlvd);
   
   Reg#(Maybe#(Bit#(0))) wait_for_add <- mkReg(tagged Invalid);
 	Adder adder <- mkCLAdder();
+//	Adder adder <- mkSimpleAdder();
   Reg#(Bool) wait_add <-mkReg(False);
   Reg#(Bool) hack <- mkReg(False);
   
@@ -65,7 +66,7 @@ module mkModMultIlvd(ModMultIlvd);
         adder.request.put(operands);
         wait_add <= True;
         wait_for_add <= tagged Valid 0;
-        p_val <= p_val + y_val;
+        //p_val <= p_val + y_val;
         end
       else begin
         next_p = p_val;

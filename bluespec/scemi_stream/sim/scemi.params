@@ -1,4 +1,4 @@
-// Sce-Mi parameters file generated on: Thu May  2 11:34:11 EDT 2013
+// Sce-Mi parameters file generated on: Fri May  3 17:13:49 EDT 2013
 // By: Bluespec scemilink utility, version 2013.01.beta4 (build 30305, 2013-01-22)
 
 // ObjectKind Index AttributeName Value
@@ -22,9 +22,9 @@ MessageOutPort 3 Type           "Bool"
 
 MessageOutPort 2 TransactorName ""
 MessageOutPort 2 PortName       "scemi_rsaxactor_resp_outport"
-MessageOutPort 2 PortWidth      520
+MessageOutPort 2 PortWidth      1032
 MessageOutPort 2 ChannelId      2
-MessageOutPort 2 Type           "Bit#(520)"
+MessageOutPort 2 Type           "Bit#(1032)"
 
 MessageOutPort 1 TransactorName ""
 MessageOutPort 1 PortName       "scemi_dut_softrst_resp_outport"
