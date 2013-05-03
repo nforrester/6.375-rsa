@@ -24,6 +24,7 @@ module mkModMultIlvd(ModMultIlvd);
   FIFO#(BIG_INT) outputFIFO <- mkFIFO();
   Reg#(Bit#(32)) i <- mkReg(0);
   Reg#(BIG_INT) p_val <- mkReg(0);
+  Reg#(BIG_INT) x_val <- mkRegU;
   Reg#(State) state <- mkReg(Shift);
   
   Reg#(Maybe#(Bit#(0))) wait_for_add <- mkReg(tagged Invalid);
@@ -39,6 +40,16 @@ module mkModMultIlvd(ModMultIlvd);
       p_val <= 0;
       wait_for_add <= tagged Invalid;
       state <= Shift;
+   //   let in = inputFIFO.first();
+   //   x_val <= in[0];
+      let in = inputFIFO.first();
+      let x_temp = in[0];
+      BIG_INT x_out = ?;
+      for (Integer ptr= 0; ptr < valueof(BI_SIZE) ; ptr = ptr +1) begin
+        x_out[valueof(BI_SIZE)-1-ptr] = x_temp[ptr];
+      end
+      x_val <= x_out; 
+
   endrule
 
  
@@ -52,12 +63,15 @@ module mkModMultIlvd(ModMultIlvd);
 
   rule doXiY (state == XiY);
     let in = inputFIFO.first();
-    let x_val = in[0];
+   // let x_val = in[0];
     let y_val = in[1];
-      
+      let x_tmp = in[0]; 
       let next_p = ?;
-      if(x_val[i] == 1)begin
-      	
+     
+      if(x_tmp[i] == 1)begin
+      x_val <= x_val >> 1;
+     // if(x_val[0] == 1) begin	
+        $display("equals 1");
       	// Pack the add request
       	Vector#(2, BIG_INT) operands;
     		operands[0] = p_val;
