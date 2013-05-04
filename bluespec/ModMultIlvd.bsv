@@ -1,17 +1,22 @@
 import RSAPipelineTypes::*;
 
 
+
+
 import ClientServer::*;
 import GetPut::*;
 import FIFO::*;
 import Vector::*;
 import PipelineAdder::*;
 
+
 typedef enum {Shift, XiY, AddPI, PsubM1, PsubM2, Done} State deriving (Bits,Eq);
 typedef Server#(
   Vector#(3, BIG_INT),  // changed this to hardcoded 3 since the algo is hardcoded
   BIG_INT
 ) ModMultIlvd;
+
+
 
 
 // Interface:
@@ -23,11 +28,13 @@ module mkModMultIlvd(ModMultIlvd);
   FIFO#(BIG_INT) outputFIFO <- mkFIFO();
   Reg#(Bit#(32)) i <- mkReg(0);
   Reg#(BIG_INT) p_val <- mkReg(0);
+  Reg#(BIG_INT) x_val <- mkRegU;
   Reg#(State) state <- mkReg(Shift);
   
   Reg#(Maybe#(Bit#(0))) wait_for_add <- mkReg(tagged Invalid);
-	Adder adder <- mkPipelineAdder();
-
+//	Adder adder <- mkCLAdder();
+	Adder adder <- mkSimpleAdder();
+  Reg#(Bool) wait_add <-mkReg(False);
   Reg#(Bool) hack <- mkReg(False);
   
   rule init(!hack);
@@ -37,7 +44,19 @@ module mkModMultIlvd(ModMultIlvd);
       p_val <= 0;
       wait_for_add <= tagged Invalid;
       state <= Shift;
+   //   let in = inputFIFO.first();
+   //   x_val <= in[0];
+      let in = inputFIFO.first();
+      let x_temp = in[0];
+      BIG_INT x_out = ?;
+      for (Integer ptr= 0; ptr < valueof(BI_SIZE) ; ptr = ptr +1) begin
+        x_out[valueof(BI_SIZE)-1-ptr] = x_temp[ptr];
+      end
+      x_val <= x_out; 
+
+
   endrule
+
 
  
   rule doShift (state == Shift  && hack);
@@ -48,24 +67,31 @@ module mkModMultIlvd(ModMultIlvd);
     //$display("doShift\t\tP = %d", next_p);
   endrule
 
+
   rule doXiY (state == XiY);
     let in = inputFIFO.first();
-    let x_val = in[0];
+   // let x_val = in[0];
     let y_val = in[1];
-      
+      let x_tmp = in[0]; 
       let next_p = ?;
-      if(x_val[i] == 1)begin
-      	
+     
+      if(x_tmp[i] == 1)begin
+      x_val <= x_val >> 1;
+     // if(x_val[0] == 1) begin	
+        //$display("equals 1");
       	// Pack the add request
       	Vector#(2, BIG_INT) operands;
     		operands[0] = p_val;
     		operands[1] = y_val;
     		
         adder.request.put(operands);
+        wait_add <= True;
         wait_for_add <= tagged Valid 0;
+        //p_val <= p_val + y_val;
         end
       else begin
         next_p = p_val;
+        wait_add <= False;
         end
       //$display("doXiY\t\tp = %d", next_p);
         
@@ -82,25 +108,26 @@ module mkModMultIlvd(ModMultIlvd);
     
     // Grab the result from the adder if we're waiting for it
     if(isValid(wait_for_add)) begin
-			let p_val_result <- adder.response.get();
+			p_val_result <- adder.response.get();
 			wait_for_add <= tagged Invalid;
 		end else begin
 			// otherwise just put in the current p_val
 			p_val_result = p_val;
 		end
     
-    if (p_val >= m_val) begin
+    if (p_val_result >= m_val) begin
       next_p = p_val_result - m_val;
       p_val <= next_p;
     end
     
     else begin
-      next_p = p_val;
+      p_val <= p_val_result;
     end
     
     state <= PsubM2;
     //$display("doPSubM1\t\tp = %d", next_p);
   endrule
+
 
   rule doPSubM2 (state == PsubM2);
     let in = inputFIFO.first();
@@ -114,6 +141,7 @@ module mkModMultIlvd(ModMultIlvd);
       next_p = p_val;
     end
 
+
     //$display("doPSubM2\t\tp = %d", next_p);
     i <= i -1;
     if(i==0)begin
@@ -123,7 +151,9 @@ module mkModMultIlvd(ModMultIlvd);
       state <= Shift;
     end
 
+
   endrule
+
 
   rule doComplete (state == Done);
   let in = inputFIFO.first();
@@ -136,11 +166,15 @@ module mkModMultIlvd(ModMultIlvd);
   endrule
 
 
+
+
    
   interface Put request = toPut(inputFIFO);
   interface Get response = toGet(outputFIFO);
 endmodule
 
+
 module mkModMultIlvdTest (Empty);
   // some unit test
 endmodule
+
