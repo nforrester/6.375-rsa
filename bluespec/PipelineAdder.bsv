@@ -5,6 +5,7 @@ import GetPut::*;
 import FIFO::*;
 import FIFOF::*;
 import Vector::*;
+import Randomizable::*;
 
 
 typedef Server#(
@@ -53,14 +54,36 @@ endmodule
 typedef enum {Add, Done} State deriving (Bits, Eq);
 
 
+module mkSimpleAdder(Adder);
+	FIFOF#(Vector#(2, BIG_INT)) inputFIFO <- mkFIFOF();
+  FIFO#(BIG_INT) outputFIFO <- mkFIFO();
+
+
+  rule doAdd;
+    let in = inputFIFO.first();
+    inputFIFO.deq();
+
+
+    let res = in[0] + in[1];
+    outputFIFO.enq(res);
+  endrule
+
+
+  interface Put request = toPut(inputFIFO);
+  interface Get response = toGet(outputFIFO);
+
+
+endmodule
+
+
 module mkPipelineAdder(Adder);
 
 	// Concatenates chunks into one big BIG_INT
 	function BIG_INT toBigInt(Vector#(ADD_STAGES, Reg#(Bit#(ADD_WIDTH))) data);
 		BIG_INT result = 0;
 		
-		for(Integer i = 0; i < valueOf(BI_SIZE); i = i + 1) begin
-			Integer chunk_id = (i * valueOf(ADD_STAGES)) / valueOf(BI_SIZE);
+		for(Integer i = 0; i < valueOf(RSA_SIZE); i = i + 1) begin
+			Integer chunk_id = (i * valueOf(ADD_STAGES)) / valueOf(RSA_SIZE);
 			let chunk = data[chunk_id];
 			result[i] = chunk[i - (chunk_id * valueOf(ADD_WIDTH))];
 		end
@@ -73,31 +96,22 @@ module mkPipelineAdder(Adder);
   FIFO#(BIG_INT) outputFIFO <- mkFIFO();
   
   Reg#(State) state <- mkReg(Add);
-	Reg#(Int#(32)) hack <- mkReg(1337);
 	Reg#(Int#(TAdd#(TLog#(ADD_STAGES), 1))) add_stage <- mkReg(0);
 	Reg#(Bit#(TAdd#(ADD_WIDTH, 1))) cs <- mkReg(0);
 	Vector#(ADD_STAGES, Reg#(Bit#(ADD_WIDTH))) result <- replicateM(mkReg(0));
-
-  rule reset(hack != 1337);
-    hack <= 1337;
-    state <= Add;
-    cs <= 0;
-		for(Integer j = 0; j < valueOf(ADD_STAGES); j = j + 1) begin
-			result[j] <= 0;
-		end
-    add_stage <= 0;
-  endrule
-  
 
 	rule calculate(state == Add);
     let a = inputFIFO.first()[0];
   	let b = inputFIFO.first()[1];
   	
-		Int#(TAdd#(TLog#(ADD_STAGES), 1)) add_width = fromInteger(valueOf(ADD_WIDTH));
+		// Need this width for the bit select multiplier
+		Int#(TAdd#(TLog#(BI_SIZE), 1)) add_width = fromInteger(valueOf(ADD_WIDTH));
 		
 		// Select the relevant chunk of the input data
-		Bit#(TAdd#(ADD_WIDTH, 1)) a_chunk = a[add_stage * add_width + (add_width-1):add_stage * add_width];
-		Bit#(TAdd#(ADD_WIDTH, 1)) b_chunk = b[add_stage * add_width + (add_width-1):add_stage * add_width];
+   	//$display("Selecting [%d:%d]", zeroExtend(add_stage) * add_width + (add_width-1), zeroExtend(add_stage) * add_width);
+		// UNOPTIMAL: no need for multipliers here, can latch indices and just do an add
+		Bit#(TAdd#(ADD_WIDTH, 1)) a_chunk = a[zeroExtend(add_stage) * add_width + (add_width-1) : zeroExtend(add_stage) * add_width];
+		Bit#(TAdd#(ADD_WIDTH, 1)) b_chunk = b[zeroExtend(add_stage) * add_width + (add_width-1) : zeroExtend(add_stage) * add_width];
 				
 		// Perform an addition, carrying in the carry bit from last cycle
 	 	let cs_in = a_chunk + b_chunk  + zeroExtend(cs[add_width]);
@@ -108,9 +122,9 @@ module mkPipelineAdder(Adder);
 
 		add_stage <= add_stage + 1;
 		
-		//$display("Adding stage %d, %d + %d = %d" , add_stage, a_chunk, b_chunk, cs_in);
+		//$display("Adding stage %d, %b + %b = %b" , add_stage, a_chunk, b_chunk, cs_in);
 		
-		if(add_stage == fromInteger(valueOf(ADD_STAGES) - 2)) begin
+		if(add_stage == fromInteger(valueOf(ADD_STAGES) - 1)) begin
 			state <= Done;
 		end
 		
@@ -132,4 +146,54 @@ module mkPipelineAdder(Adder);
 endmodule
 
 
+<<<<<<< HEAD
+=======
+module mkAddTest (Empty);
+
+    Adder adder <- mkPipelineAdder();
+		Randomize#(Bit#(RSA_SIZE)) test_gen1 <- mkGenericRandomizer;
+		Randomize#(Bit#(RSA_SIZE)) test_gen2 <- mkGenericRandomizer;
+
+    Reg#(Bit#(32)) feed <- mkReg(0);
+    Reg#(BIG_INT) sim_result <- mkReg(0);
+
+		rule init(feed == 0);
+			test_gen1.cntrl.init();
+			test_gen2.cntrl.init();
+			feed <= 1;
+		endrule
+
+    rule store(feed == 1);
+      feed <= 2;
+      Vector#(2, BIG_INT) operands;
+      let a <- test_gen1.next();
+      let b <- test_gen2.next();
+      
+      // No overflow support
+      a[valueOf(RSA_SIZE)-1] = 0;
+      b[valueOf(RSA_SIZE)-1] = 0;
+      
+      operands[0] = zeroExtend(a);
+      operands[1] = zeroExtend(b);
+      
+      sim_result <= operands[0] + operands[1];
+      //$display("%b\n+\n%b", operands[0], operands[1]);
+    		
+      
+      adder.request.put(operands);
+    endrule
+
+    rule load(feed == 2);
+      let result = ?;		
+      result <-	adder.response.get();
+      $display("Result: %d", result);
+      if(result != sim_result) begin
+        $display("Result:\n%b", result);
+        $display("Golden:\n%b", sim_result);
+        $display("FAIL");
+        $finish();
+      end
+      feed <= 1;
+    endrule
+endmodule
 

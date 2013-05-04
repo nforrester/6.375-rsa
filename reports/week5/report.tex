@@ -26,13 +26,13 @@
 \section{Overview}
 Our project is implementing the RSA cryptographic algorithm in Bluespec.
 The benefits of doing this in hardware are higher performance, reduced power usage and size, and cost.
-Having reusable IP that implements RSA would allow a device manufacturer to skip the inclusion
-of a processor in a device that requires secure communications, but otherwise wouldn't need one. 
+Having reusable IP that implements RSA would allow a device manufacturer to either reduce their
+power footprint, or skip inclusion of a processor in a device that otherwise would not need one.
 
 An example application of our preliminary proposal could be an intelligence agencies' covert listening device
 with the added ability of secure communication through RSA protocol.
-Specialized hardware is useful here because the device needs to be small,
-without excessive power consumption, and the ability to run for long periods of time. 
+Specialized hardware is useful here because the device needs to be small, low power, with the ability to 
+run for long periods of time. 
 
 Alternatively, suppose you were designing a high performance router to create a secure VPN between remote sites,
 so that it appears that all the computers at all sites are on the local network.
@@ -86,7 +86,7 @@ The only remaining problem is performing multiplication, modulo, and bit shiftin
 %and does something like a pipelined carry-lookahead adder.
 %Hopefully this won't be necessary though.
 
-Here is the algorithm for Interleaved modular multiplication.
+Here is the algorithm for interleaved modular multiplication.
 $N$ is the size of the numbers, in bits. For example, $N = 1024$.
 Also, $x_i$ is the $i$th bit of $x$.
 \begin{algorithmic}
@@ -303,7 +303,61 @@ and as we are all busy we hesitate to commit to taking on ever more complex task
 \section{Synthesis Progress Report}
 We have implemented and verified our design works in simulation on the FPGA from beginning to end!  As expected, our design still has not achieved timing to test our program on the FPGA.  Here are some relevant snippits from our synthesis report: \
 \begin{verbatim}
-  TIM WRITE SOMETHING HERE!!! %XXX %XXX
+  Slice Logic Utilization:
+  Number of Slice Registers:                44,905 out of  69,120   64%
+  Number of Slice LUTs:                     39,631 out of  69,120   57%
+    Number used as Memory:                     206 out of  17,920    1%
+      Number used as Dual Port RAM:             62
+
+Slice Logic Distribution:
+  Number of occupied Slices:                14,501 out of  17,280   83%
+
+  Number of BlockRAM/FIFO:                      30 out of     148   20%
+    Number using BlockRAM only:                 30
+    Total primitives used:
+      Number of 36k BlockRAM used:              12
+      Number of 18k BlockRAM used:              32
+    Total Memory used (KB):                  1,008 out of   5,328   18%
+
+Timing errors: 10188  Score: 59762757 (Setup/Max: 59442565, Hold: 320192)
+
+Constraints cover 81111242 paths, 0 nets, and 250838 connections
+
+Timing Summary:
+---------------
+Speed Grade: -1
+
+   Minimum period: 29.797ns (Maximum Frequency: 33.561MHz)
+   Minimum input arrival time before clock: 3.923ns
+   Maximum output required time after clock: 6.527ns
+   Maximum combinational path delay: 1.170ns
+\end{verbatim}
+
+The critical path is through the 1024-bit adder:
+
+\begin{verbatim}
+Timing constraint: Default period analysis for Clock 'scemi_clk_port_clkgen/current_clk1'
+  Clock period: 29.797ns (frequency: 33.561MHz)
+  Total number of paths / destination ports: 74971937 / 69624
+-------------------------------------------------------------------------
+Delay:               29.797ns (Levels of Logic = 1036)
+  Source:            scemi_dut_dut_dutIfc_m_dut/rsa_modexpt_modmult0_inputFIFO/data0_reg_1032 (FF)
+  Destination:       scemi_dut_dut_dutIfc_m_dut/rsa_modexpt_modmult0_p_val_1031 (FF)
+  Source Clock:      scemi_clk_port_clkgen/current_clk1 rising
+  Destination Clock: scemi_clk_port_clkgen/current_clk1 rising
+
+  Data Path: scemi_dut_dut_dutIfc_m_dut/rsa_modexpt_modmult0_inputFIFO/data0_reg_1032 to scemi_dut_dut_dutIfc_m_dut/rsa_modexpt_modmult0_p_val_1031
+                                Gate     Net
+    Cell:in->out      fanout   Delay   Delay  Logical Name (Net Name)
+    ----------------------------------------  ------------
+     FD:C->Q               2   0.471   0.581  data0_reg_1032 (data0_reg_1032)
+     end scope: 'rsa_modexpt_modmult0_inputFIFO'
+     LUT2:I0->O            1   0.094   0.000  Madd_MUX_rsa_modexpt_modmult0_p_val_write_1__VAL_5_lut<0> (Madd_MUX_rsa_modexpt_modmult0_p_val_write_1__VAL_5_lut<0>)
+     MUXCY:S->O            1   0.372   0.000  Madd_MUX_rsa_modexpt_modmult0_p_val_write_1__VAL_5_cy<0> (Madd_MUX_rsa_modexpt_modmult0_p_val_write_1__VAL_5_cy<0>)
+     MUXCY:CI->O           1   0.026   0.000  Madd_MUX_rsa_modexpt_modmult0_p_val_write_1__VAL_5_cy<1> (Madd_MUX_rsa_modexpt_modmult0_p_val_write_1__VAL_5_cy<1>)
+     MUXCY:CI->O           1   0.026   0.000  Madd_MUX_rsa_modexpt_modmult0_p_val_write_1__VAL_5_cy<2> (Madd_MUX_rsa_modexpt_modmult0_p_val_write_1__VAL_5_cy<2>)
+     MUXCY:CI->O           1   0.026   0.000  Madd_MUX_rsa_modexpt_modmult0_p_val_write_1__VAL_5_cy<3> (Madd_MUX_rsa_modexpt_modmult0_p_val_write_1__VAL_5_cy<3>)
+     MUXCY:CI->O           1   0.026   0.000  Madd_MUX_rsa_modexpt_modmult0_p_val_write_1__VAL_5_cy<4> (Madd_MUX_rsa_modexpt_modmult0_p_val_write_1__VAL_5_cy<4>)
 \end{verbatim}
 
 We have been following the synthesis reports to target our new designs in order to achieve timing.  Our first area of improvement was modifying the modular multiplication algorithm for accessing the $ith$ bit of an input operand. Instead, we only access the least significant bit and shift the operand on every cycle. This improved the overall performance, however, in observing the synthesis reports we have realized we need to break up the 1024 addition.  

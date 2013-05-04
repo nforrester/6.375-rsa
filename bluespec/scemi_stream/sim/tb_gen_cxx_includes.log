@@ -19,7 +19,6 @@ Header file tbinclude/BusNumber.h has been created.
 Header file tbinclude/TLPTag.h has been created.
 Header file tbinclude/CreditCount.h has been created.
 Header file tbinclude/NodeID.h has been created.
-Header file tbinclude/CHUNK_T.h has been created.
 Header file tbinclude/BIG_INT.h has been created.
 Header file tbinclude/RSA_PACKET.h has been created.
 Header file tbinclude/ClkNextRdy.h has been created.
