@@ -106,24 +106,24 @@ module mkAdderUnit(AdderUnit#(adder_size));
 
 endmodule
 
+// in[0] - in[1]
+module mkSubtracter(Adder);
+  AdderUnit#(BI_SIZE) adder <- mkAdderUnit();
+  interface Put request;
+    method Action put(Vector#(2, BIG_INT) x);
+      adder.request.put(AdderIn{a:x[0], b:~x[1], c_in:1});
+    endmethod
+  endinterface
+
+  interface Get response;
+    method ActionValue#(BIG_INT) get();
+      let x <- adder.response.get();
+      return x.s;
+    endmethod
+  endinterface
+endmodule
 
 module mkCLAdder(Adder);
-/*  FIFOF#(Vector#(2, BIG_INT)) inputFIFO <- mkFIFOF();
-  FIFO#(BIG_INT) outputFIFO <- mkFIFO();
-  AdderUnit#(BI_SIZE) adder  <- mkAdderUnit();
-  rule doAdd;
-    let in = inputFIFO.first();
-    inputFIFO.deq();
-    adder.request.put(AdderIn{a:in[0], b:in[1], c_in:0});
-  endrule
-  
-  rule doPutRes;
-    let x <- adder.response.get();
-    outputFIFO.enq(x.s);
-  endrule
-
- interface Put request = toPut(inputFIFO);
- interface Get response = toGet(outputFIFO);*/
 
   AdderUnit#(BI_SIZE) adder  <- mkAdderUnit();
   interface Put request;

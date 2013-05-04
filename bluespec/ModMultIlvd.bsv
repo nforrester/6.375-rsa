@@ -26,9 +26,11 @@ module mkModMultIlvd(ModMultIlvd);
   Reg#(State) state <- mkReg(Shift);
   
   Reg#(Maybe#(Bit#(0))) wait_for_add <- mkReg(tagged Invalid);
+  Reg#(Maybe#(Bit#(0))) wait_for_sub1 <- mkReg(tagged Invalid);
+  Reg#(Maybe#(Bit#(0))) wait_for_sub2 <- mkReg(tagged Invalid);
 //	Adder adder <- mkCLAdder();
 	Adder adder <- mkSimpleAdder();
-  Reg#(Bool) wait_add <-mkReg(False);
+	Adder subtracter <- mkSubtracter();
   Reg#(Bool) hack <- mkReg(False);
   
   rule init(!hack);
@@ -66,21 +68,16 @@ module mkModMultIlvd(ModMultIlvd);
       let next_p = ?;
      
       if(x_tmp[i] == 1)begin
-      x_val <= x_val >> 1;
-     // if(x_val[0] == 1) begin	
-        //$display("equals 1");
       	// Pack the add request
       	Vector#(2, BIG_INT) operands;
     		operands[0] = p_val;
     		operands[1] = y_val;
     		
         adder.request.put(operands);
-        wait_add <= True;
         wait_for_add <= tagged Valid 0;
         end
       else begin
         next_p = p_val;
-        wait_add <= False;
         end
         
       state <= PsubM1;
@@ -102,8 +99,14 @@ module mkModMultIlvd(ModMultIlvd);
 		end
     
     if (p_val_result >= m_val) begin
-      next_p = p_val_result - m_val;
-      p_val <= next_p;
+      // pack the sub request
+      Vector#(2, BIG_INT) operands;
+      operands[0] = p_val_result;
+      operands[1] = m_val;
+      subtracter.request.put(operands);
+      wait_for_sub1 <= tagged Valid 0;
+      
+      //p_val <= p_val_result - m_val;
     end
     
     else begin
@@ -118,15 +121,21 @@ module mkModMultIlvd(ModMultIlvd);
   rule doPSubM2 (state == PsubM2);
     let in = inputFIFO.first();
     let m_val = in[2];  
-    let next_p = ?;
-    if (p_val >= m_val) begin
-      next_p = p_val - m_val;
-      p_val <= next_p;
-    end
+    let p_val_result = ?;
+    if(isValid(wait_for_sub1))begin
+      wait_for_sub1 <= tagged Invalid;
+      p_val_result <- subtracter.response.get();
+      end
     else begin
-      next_p = p_val;
+      p_val_result = p_val;
     end
 
+    if (p_val_result >= m_val) begin
+      p_val_result = p_val_result - m_val;
+    end
+
+    p_val <= p_val_result;
+  
 
     //$display("doPSubM2\t\tp = %d", next_p);
     i <= i -1;
