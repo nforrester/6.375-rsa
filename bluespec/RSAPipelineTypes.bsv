@@ -14,8 +14,8 @@ typedef Bit#(RSA_PACKET_SIZE) RSA_PACKET;
 typedef TDiv#(BI_SIZE, 8) PACKET_COUNT;
 
 // Adder types
-typedef 512 ADD_WIDTH; // MUST BE DIVISIBLE INTO BI_SIZE
-typedef TDiv#(RSA_SIZE, ADD_WIDTH) ADD_STAGES;
+typedef 2 ADD_STAGES; // MUST BE DIVISIBLE INTO BI_SIZE
+typedef TDiv#(BI_SIZE, ADD_STAGES) ADD_WIDTH;
 
 // Memory Types
 typedef Bit#(16) Addr;

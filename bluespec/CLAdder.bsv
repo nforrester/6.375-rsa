@@ -7,8 +7,14 @@ import Vector::*;
 
 typedef 4 ADDER_SIZE;
 
+typedef struct {
+  BIG_INT a;
+  BIG_INT b;
+  Bool do_sub;
+} AdderOperands deriving (Bits, Eq);
+
 typedef Server#(
-  Vector#(2, BIG_INT),
+  AdderOperands,
   BIG_INT
 ) Adder;
 
@@ -47,14 +53,19 @@ typedef Server#(
 
 
 module mkSimpleAdder(Adder);
-	FIFOF#(Vector#(2, BIG_INT)) inputFIFO <- mkFIFOF();
+	FIFOF#(AdderOperands) inputFIFO <- mkFIFOF();
   FIFO#(BIG_INT) outputFIFO <- mkFIFO();
 
-  rule doAdd;
+  rule doAddORSub;
     let in = inputFIFO.first();
     inputFIFO.deq();
+    let res = ?;
 
-    let res = in[0] + in[1];
+    if(in.do_sub)begin
+      res = in.a - in.b;
+    end else begin
+      res = in.a + in.b;
+    end
     outputFIFO.enq(res);
   endrule
 
@@ -106,29 +117,17 @@ module mkAdderUnit(AdderUnit#(adder_size));
 
 endmodule
 
-// in[0] - in[1]
-module mkSubtracter(Adder);
-  AdderUnit#(BI_SIZE) adder <- mkAdderUnit();
-  interface Put request;
-    method Action put(Vector#(2, BIG_INT) x);
-      adder.request.put(AdderIn{a:x[0], b:~x[1], c_in:1});
-    endmethod
-  endinterface
-
-  interface Get response;
-    method ActionValue#(BIG_INT) get();
-      let x <- adder.response.get();
-      return x.s;
-    endmethod
-  endinterface
-endmodule
-
 module mkCLAdder(Adder);
 
   AdderUnit#(BI_SIZE) adder  <- mkAdderUnit();
+  
   interface Put request;
-    method Action put(Vector#(2, BIG_INT) x);
-      adder.request.put(AdderIn{a:x[0], b:x[1], c_in:0});
+    method Action put(AdderOperands x);
+      if(x.do_sub)begin
+        adder.request.put(AdderIn{a:x.a, b:~x.b, c_in:1});
+      end else begin
+        adder.request.put(AdderIn{a:x.a, b:x.b, c_in:0});
+        end
     endmethod
   endinterface
 
