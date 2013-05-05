@@ -83,6 +83,8 @@ module mkPipelineAdder(Adder);
   Reg#(State) state <- mkReg(Add);
 	Reg#(Int#(TAdd#(TLog#(ADD_STAGES), 1))) add_stage <- mkReg(0);
 	Reg#(Bit#(TAdd#(ADD_WIDTH, 1))) cs <- mkReg(0);
+	Reg#(Int#(TAdd#(TLog#(BI_SIZE), 1))) idx_lo <- mkReg(0);
+	Reg#(Int#(TAdd#(TLog#(BI_SIZE), 1))) idx_hi <- mkReg(fromInteger(valueOf(ADD_WIDTH)) - 1);	
 	Vector#(ADD_STAGES, Reg#(Bit#(ADD_WIDTH))) result <- replicateM(mkReg(0));
 
 	rule calculate(state == Add);
@@ -98,10 +100,11 @@ module mkPipelineAdder(Adder);
 		Int#(TAdd#(TLog#(BI_SIZE), 1)) add_width = fromInteger(valueOf(ADD_WIDTH));
 		
 		// Select the relevant chunk of the input data
-   	//$display("Selecting [%d:%d]", zeroExtend(add_stage) * add_width + (add_width-1), zeroExtend(add_stage) * add_width);
-		// UNOPTIMAL: no need for multipliers here, can latch indices and just do an add
-		Bit#(TAdd#(ADD_WIDTH, 1)) a_chunk = a[zeroExtend(add_stage) * add_width + (add_width-1) : zeroExtend(add_stage) * add_width];
-		Bit#(TAdd#(ADD_WIDTH, 1)) b_chunk = b[zeroExtend(add_stage) * add_width + (add_width-1) : zeroExtend(add_stage) * add_width];
+   	//$display("Selecting [%d:%d]", idx_hi, idx_lo);
+		Bit#(TAdd#(ADD_WIDTH, 1)) a_chunk = a[idx_hi : idx_lo];
+		Bit#(TAdd#(ADD_WIDTH, 1)) b_chunk = b[idx_hi : idx_lo];
+		idx_lo <= idx_lo + add_width;
+		idx_hi <= idx_hi + add_width;
 				
 		// Perform an addition, carrying in the carry bit from last cycle, and the external carry in
 	 	let cs_in = a_chunk + b_chunk  + zeroExtend(cs[add_width]) + c_in;
@@ -126,6 +129,8 @@ module mkPipelineAdder(Adder);
 		inputFIFO.deq();
 		add_stage <= 0;
 		cs <= 0;
+		idx_lo <= 0;
+		idx_hi <= fromInteger(valueOf(ADD_WIDTH)) - 1;
 		state <= Add;
 	
 	

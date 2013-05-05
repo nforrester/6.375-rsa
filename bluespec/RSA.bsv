@@ -56,7 +56,7 @@ module mkRSA (RSAServer);
     		packet[2] = toBigInt(modulus_buffer);
     
     		// Perform the calculation
-    		$display("Data %X", packet[0]);
+    		$display("Done loading\nData %X", packet[0]);
     		$display("Mod %X", packet[2]);
     		$display("Exponent %X", packet[1]);
     		modexpt.request.put(packet);

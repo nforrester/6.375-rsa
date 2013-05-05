@@ -1,6 +1,6 @@
 import GetPut::*;
 
-typedef 520 BI_SIZE;
+typedef 1032 BI_SIZE;
 typedef Bit#(BI_SIZE) BIG_INT;
 
 // SceMi Types
