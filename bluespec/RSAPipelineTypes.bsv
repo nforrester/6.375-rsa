@@ -12,5 +12,12 @@ typedef TDiv#(BI_SIZE, 8) PACKET_COUNT;
 typedef 2 ADD_STAGES; // MUST BE DIVISIBLE INTO BI_SIZE
 typedef TDiv#(BI_SIZE, ADD_STAGES) ADD_WIDTH;
 
+typedef struct {
+  BIG_INT a;
+  BIG_INT b;
+  Bool do_sub;
+} AdderOperands deriving (Bits, Eq);
+
+
 // Memory Types
 typedef Bit#(16) Addr;

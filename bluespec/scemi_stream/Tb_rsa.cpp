@@ -342,7 +342,7 @@ int main(int argc, char* argv[])
     
 		// Pack the command for transport to FPGA
 		// Command is specified in Command.h, run build and look in tbinclude
-		// Assuming mod_len >> priv_len/pub_len/len(ciphertext)
+		// Assuming mod_len >= priv_len/pub_len/len(ciphertext)
 		for(i = 0; i < packet.mod_len; i++) {
 			cmd.m_modulus = packet.mod[packet.mod_len - i - 1];
 			
@@ -360,28 +360,9 @@ int main(int argc, char* argv[])
 				cmd.m_data = 0;
 			}
 			
-			/*if(i == 0) {
-				cmd.m_modulus = 255;
-				cmd.m_data = 2;
-				cmd.m_exponent = 8;
-			} else {
-				cmd.m_modulus = 0;
-				cmd.m_data = 0;
-				cmd.m_exponent = 0;	
-			}*/
-			
-			printf("Sending message %i, mod: %X coeff: %X data:%X\n", i, cmd.m_data.get(), cmd.m_exponent.get(), cmd.m_data.get());
+			//printf("Sending message %i, mod: %X coeff: %X data:%X\n", i, cmd.m_data.get(), cmd.m_exponent.get(), cmd.m_data.get());
     	inport.sendMessage(cmd);
 		}
-		
-		/*while(i > 127) {
-			printf("Sending padding %i", i);
-			cmd.m_modulus = 0;
-			cmd.m_exponent = 0;
-			cmd.m_data = 0;
-			inport.sendMessage(cmd);
-			i++;
-		}*/
 			
 			printf("Sending padding, 1 packet");
 			cmd.m_modulus = 0;
