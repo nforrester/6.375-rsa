@@ -4,7 +4,8 @@ import GetPut::*;
 import FIFO::*;
 import Vector::*;
 //import PipelineAdder::*;
-import CLAdder::*;
+//import CLAdder::*;
+import SlowClkAdder::*;
 
 
 typedef enum {Shift, XiY, AddPI, PsubM1, PsubM2, PsubM3,  Done} State deriving (Bits,Eq);
@@ -28,7 +29,8 @@ module mkModMultIlvd(ModMultIlvd);
   Reg#(Maybe#(Bit#(0))) wait_for_add <- mkReg(tagged Invalid);
   Reg#(Maybe#(Bit#(0))) wait_for_sub1 <- mkReg(tagged Invalid);
   Reg#(Maybe#(Bit#(0))) wait_for_sub2 <- mkReg(tagged Invalid);
-	Adder adder <- mkCLAdder();
+  Adder adder <- mkSlowClkAdder();
+//	Adder adder <- mkCLAdder();
 //	Adder adder <- mkSimpleAdder();
   Reg#(Bool) hack <- mkReg(False);
   
