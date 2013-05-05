@@ -35,9 +35,9 @@ typedef Server#(
 */
 
 
-module mkSimpleAdder(Adder);
-	FIFOF#(AdderOperands) inputFIFO <- mkFIFOF();
-  FIFO#(BIG_INT) outputFIFO <- mkFIFO();
+module mkWrappedAdder(Clocks::ClockDividerIfc clk, Reset rst, Adder ifc);
+  SyncFIFOIfc#(AdderOperands) inputFIFO <- mkSyncFIFOToSlow(2, clk, rst);
+  SyncFIFOIfc#(BIG_INT) outputFIFO <- mkSyncFIFOToFast(2, clk, rst);
 
   rule doAddORSub;
     let in = inputFIFO.first();
@@ -52,32 +52,6 @@ module mkSimpleAdder(Adder);
     outputFIFO.enq(res);
   endrule
 
-  interface Put request = toPut(inputFIFO);
-  interface Get response = toGet(outputFIFO);
-
-endmodule
-
-module mkSlowClkAdder(Adder);
-  let clockDiv2 <- mkClockDivider(2);
-  let clk2nd = clockDiv2.slowClock;
-  let currentReset <- exposeCurrentReset;
-  let reset2nd <- mkAsyncReset(1, currentReset, clk2nd);
-  //let reset2nd <- mkAsyncResetFromCC(0, clk2nd);
-  let adder <- mkSimpleAdder(clocked_by clk2nd, reset_by reset2nd);
-
-  SyncFIFOIfc#(AdderOperands) inputFIFO <- mkSyncFIFOToSlow(2, clockDiv2, reset2nd);
-  SyncFIFOIfc#(BIG_INT) outputFIFO <- mkSyncFIFOToFast(2, clockDiv2, reset2nd);
-
-  rule in;
-    adder.request.put(inputFIFO.first());
-    inputFIFO.deq();
-  endrule
-
-  rule out;
-    let x <- adder.response.get();
-    outputFIFO.enq(x);
-  endrule
-
   interface Put request;
     method Action put(AdderOperands x);
       inputFIFO.enq(x);
@@ -90,4 +64,15 @@ module mkSlowClkAdder(Adder);
       return outputFIFO.first();
     endmethod
   endinterface
+endmodule
+
+module mkSlowClkAdder(Adder);
+  let clockDiv2 <- mkClockDivider(2);
+  let clk2nd = clockDiv2.slowClock;
+  let currentReset <- exposeCurrentReset;
+  let reset2nd <- mkAsyncReset(1, currentReset, clk2nd);
+  let adder <- mkWrappedAdder(clockDiv2, reset2nd, clocked_by clk2nd, reset_by reset2nd);
+
+  interface Put request = adder.request;
+  interface Get response = adder.response;
 endmodule
