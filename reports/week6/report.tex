@@ -297,18 +297,32 @@ for several independent modular exponentiators in parallel.
 Naturally though, this goes somewhat beyond the original scope of the project,
 and as we are all busy we hesitate to commit to taking on ever more complex tasks.
 \subsection{Adder Alternatives}
-In order to get our design to run at 50 MHz, we have implemented 3 alternative addition modules:
+In order to get our 1024-bit design to run at 50 MHz, we have implemented 3 alternative addition modules:
 
 % Carry look-ahead adder
-herp derp
+The CLA adder performs the 1024 bit addition in one cycle, but the critical path
+is shorter than that for the ripple carry adder. However, this topology uses more
+space and did not fit onto the FPGA without modifying the ModExpt architecture, resulting
+in a system performance drop.
 
 % Folded adder
-herp derp
+The folded added performs the 1024 bit addition/subtraction in multiple stages, carrying
+the overflow bit to the next stage. Since the addition modules are called a million times for a
+1024 bit operation, there is a significant throughput penalty to using this module. Due to 
+the design of ModMultIlvd, it is not possible to pipeline the addition stages.
 
 % Clock divided adder
-herp derp
+A clock divider splits the 50 Mhz SceMi clock into a 25 Mhz adder clock, which uses
+the regular ripple carry adder. Clock crossing FIFOs were added for correctness.
 
-\section{Synthesis Progress Report}
+Early this week, we will measure the wall clock performance of all three approaches
+and select the highest performing topology. Since some of the adders use 99% of the 
+FPGA slices, compilation takes 4+ hours and we're still waiting on the 
+synthesis results for the folded adder.
+
+
+\section{Previous Synthesis Progress Report}
+
 We have implemented and verified our design works in simulation on the FPGA from beginning to end!  As expected, our design still has not achieved timing to test our program on the FPGA.  Here are some relevant snippits from our synthesis report: \
 \begin{verbatim}
   Slice Logic Utilization:
