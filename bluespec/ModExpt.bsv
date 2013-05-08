@@ -7,6 +7,7 @@ import GetPut::*;
 import FIFO::*;
 import BRAMFIFO::*;
 import Vector::*;
+import Clocks::*;
 
 
 interface ModExpt;
@@ -42,9 +43,10 @@ endinterface
 typedef enum {Start, PutMult1, PutMult2, GetMult} State deriving (Bits, Eq);
 
 
-module mkModExpt(ModExpt);
-  FIFO#(Bit#(1)) doneFIFO <- mkSizedFIFO(1);
-  
+module mkWrappedModExpt(Clocks::ClockDividerIfc clk, Reset rst, ModExpt ifc);
+  SyncFIFOIfc#(Vector#(3, BIG_INT)) inputFIFO <- mkSyncFIFOToSlow(2, clk, rst);
+  SyncFIFOIfc#(BIG_INT) outputFIFO <- mkSyncFIFOToFast(2, clk, rst);
+
   Reg#(BIG_INT) b <- mkRegU;
 	Reg#(BIG_INT) e <- mkRegU;
 	Reg#(BIG_INT) c <- mkRegU;
@@ -54,9 +56,19 @@ module mkModExpt(ModExpt);
 
   Reg#(State) state <- mkReg(Start);
 
+  rule start (state == Start);
+    let data = inputFIFO.first();
+    inputFIFO.deq();
+	  b <= data[0];
+	  e <= data[1];
+	  m <= data[2];
+	  c <= 1;
+	  state <= PutMult1;
+  endrule
+
   rule doPutMult1 (state==PutMult1);
     if(e==0)begin
-      doneFIFO.enq(0);
+      outputFIFO.enq(c);
       state <= Start;
     end else begin
       if(e[0] == 1) begin
@@ -95,18 +107,28 @@ module mkModExpt(ModExpt);
 
  
     method Action putData(Vector#(3, BIG_INT) data);
-		    b <= data[0];
-		    e <= data[1];
-		    m <= data[2];
-		    c <= 1;
-		    state <= PutMult1;
+      inputFIFO.enq(data);
     endmethod
 
     method ActionValue#(BIG_INT) getResult();
-        doneFIFO.deq();
-        return c;
+      outputFIFO.deq();
+      return outputFIFO.first();
     endmethod
 endmodule
 
+module mkModExpt(ModExpt);
+  let clockDiv <- mkClockDivider(10);
+  let clk = clockDiv.slowClock;
+  let currentReset <- exposeCurrentReset;
+  let rst <- mkAsyncReset(1, currentReset, clk);
+  let modExpt <- mkWrappedModExpt(clockDiv, rst, clocked_by clk, reset_by rst);
 
+  method Action putData(Vector#(3, BIG_INT) data);
+    modExpt.putData(data);
+  endmethod
 
+  method ActionValue#(BIG_INT) getResult();
+    let r <- modExpt.getResult();
+    return r;
+  endmethod
+endmodule
