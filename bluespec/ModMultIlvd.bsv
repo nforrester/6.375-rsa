@@ -9,18 +9,18 @@ import SlowClkAdder::*;
 
 module mkAdder(Adder);
 // Adder adder <- mkSlowClkAdder();
-// 	Adder adder <- mkCLAdder();
+ 	Adder adder <- mkCLAdder();
 //	Adder adder <- mkSimpleAdder();
-	Adder adder <- mkPipelineAdder();
+//	Adder adder <- mkPipelineAdder();
     interface Put request = adder.request;
     interface Get response = adder.response;
 endmodule
 
 module mkSubtracter(Adder);
 //  Adder adder <- mkSlowClkAdder();
-//	Adder adder <- mkCLAdder();
+    Adder adder <- mkCLAdder();
 //	Adder adder <- mkSimpleAdder();
-	Adder adder <- mkPipelineAdder();
+//	Adder adder <- mkPipelineAdder();
     interface Put request;
       method Action put(AdderOperands x);
         adder.request.put(AdderOperands{a:x.a, b:~x.b, c_in:1});
@@ -137,18 +137,17 @@ module mkModMultIlvd(ModMultIlvd);
     let p_val_result = ?;
     if(isValid(wait_for_sub1))begin
       wait_for_sub1 <= tagged Invalid;
-      p_val_result <- subtracter.response.get();
+      p_val_result <- subtracter.response.get();    
+      
+      if (p_val_result >= m_val) begin
+        let operands = 	AdderOperands{a:p_val_result, b:m_val, c_in:1};
+        subtracter.request.put(operands);
+        wait_for_sub2 <= tagged Valid 0;
       end
+    end
     else begin
       p_val_result = p_val;
     end
-
-    if (p_val_result >= m_val) begin
-      let operands = 	AdderOperands{a:p_val_result, b:m_val, c_in:1};
-      subtracter.request.put(operands);
-      wait_for_sub2 <= tagged Valid 0;
-    end
-
     p_val <= p_val_result;
     state <= PsubM3;
 	endrule
