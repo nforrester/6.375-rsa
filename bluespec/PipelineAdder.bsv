@@ -62,12 +62,13 @@ module mkSimpleAdder(Adder);
 endmodule
 
 
-module mkPipelineAdder(Adder);
+module mkFoldedAdder(Adder);
 
 	// Concatenates chunks into one BIG_INT
 	function BIG_INT toBigInt(Vector#(ADD_STAGES, Reg#(Bit#(ADD_WIDTH))) data);
 		BIG_INT result = 0;
 		
+		// Pack the latched data:
 		for(Integer i = 0; i < valueOf(BI_SIZE); i = i + 1) begin
 			Integer chunk_id = (i * valueOf(ADD_STAGES)) / valueOf(BI_SIZE);
 			let chunk = data[chunk_id];
@@ -78,17 +79,18 @@ module mkPipelineAdder(Adder);
 	
 	endfunction
 
-  FIFO#(AdderOperands) inputFIFO <- mkBypassFIFO();
-  FIFO#(Bit#(1)) doneFIFO <- mkFIFO;
+  FIFOF#(AdderOperands) inputFIFO <- mkFIFOF1();
+  FIFO#(Bit#(1)) doneFIFO <- mkFIFO();
   
-  Reg#(State) state <- mkReg(Add);
+  Reg#(State) state <- mkReg(Done);
 	Reg#(Int#(TAdd#(TLog#(ADD_STAGES), 1))) add_stage <- mkReg(0);
 	Reg#(Bit#(TAdd#(ADD_WIDTH, 1))) cs <- mkReg(0);
 	Reg#(Int#(TAdd#(TLog#(BI_SIZE), 1))) idx_lo <- mkReg(0);
 	Reg#(Int#(TAdd#(TLog#(BI_SIZE), 1))) idx_hi <- mkReg(fromInteger(valueOf(ADD_WIDTH)) - 1);	
 	Vector#(ADD_STAGES, Reg#(Bit#(ADD_WIDTH))) result <- replicateM(mkReg(0));
-
+	
 	rule calculate(state == Add);
+	
     let a = inputFIFO.first().a;
   	let b = inputFIFO.first().b;
   	let sub = inputFIFO.first().do_sub;
@@ -105,40 +107,44 @@ module mkPipelineAdder(Adder);
    	//$display("Selecting [%d:%d]", idx_hi, idx_lo);
 		Bit#(TAdd#(ADD_WIDTH, 1)) a_chunk = a[idx_hi : idx_lo];
 		Bit#(TAdd#(ADD_WIDTH, 1)) b_chunk = b[idx_hi : idx_lo];
-		idx_lo <= idx_lo + add_width;
-		idx_hi <= idx_hi + add_width;
-				
+
 		// Perform an addition, carrying in the carry bit from last cycle, and the external carry in
 	 	let cs_in = a_chunk + b_chunk + zeroExtend(c_in);
-		cs <= cs_in;
-		
+	 	
 		// Store the result in the output buffer
 		result[add_stage] <= truncate(cs_in); 
+	
+//		$display("Adding stage %d, %b + %b + %d = %b" , add_stage, a_chunk, b_chunk, c_in, cs_in);
 
-		add_stage <= add_stage + 1;
-		
-		//$display("Adding stage %d, %b + %b + %d = %b" , add_stage, a_chunk, b_chunk, c_in, cs_in);
-		
 		if(add_stage == fromInteger(valueOf(ADD_STAGES) - 1)) begin
+			doneFIFO.enq(0);
+			inputFIFO.deq();
+			
+			add_stage <= 0;
+			cs <= 0;
+			idx_lo <= 0;
+			idx_hi <= fromInteger(valueOf(ADD_WIDTH)) - 1;
+			
 			state <= Done;
+		end else begin
+			// Update the indices
+			idx_lo <= idx_lo + add_width;
+			idx_hi <= idx_hi + add_width;
+				
+			cs <= cs_in;
+			
+			add_stage <= add_stage + 1;			
 		end
-		
+	
 	endrule
 
-	rule done(state == Done);	
 	
-		doneFIFO.enq(0);
-		inputFIFO.deq();
-		add_stage <= 0;
-		cs <= 0;
-		idx_lo <= 0;
-		idx_hi <= fromInteger(valueOf(ADD_WIDTH)) - 1;
-		state <= Add;
-	
-	
-	endrule
-	
-  interface Put request = toPut(inputFIFO);
+  interface Put request;
+    method Action put(AdderOperands ops);
+    		inputFIFO.enq(ops);
+    		state <= Add;
+    endmethod
+  endinterface
   
   interface Get response;
     method ActionValue#(BIG_INT) get();
@@ -151,7 +157,7 @@ endmodule
 
 module mkAddTest (Empty);
 
-    Adder adder <- mkPipelineAdder();
+    Adder adder <- mkFoldedAdder();
 		Randomize#(Bit#(BI_SIZE)) test_gen1 <- mkGenericRandomizer;
 		Randomize#(Bit#(BI_SIZE)) test_gen2 <- mkGenericRandomizer;
 
@@ -186,10 +192,9 @@ module mkAddTest (Empty);
     rule load(feed == 2);
       let result = ?;		
       result <-	adder.response.get();
-      $display("Result: %d", result);
+      $display("Result:\n%b", result);
+      $display("Golden:\n%b", sim_result);
       if(result != sim_result) begin
-        $display("Result:\n%b", result);
-        $display("Golden:\n%b", sim_result);
         $display("FAIL");
         $finish();
       end

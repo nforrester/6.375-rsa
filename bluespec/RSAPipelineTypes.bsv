@@ -5,7 +5,7 @@ typedef Bit#(BI_SIZE) BIG_INT;
 typedef TAdd#(RSA_SIZE, 8) BI_SIZE;
 
 // Adder types
-typedef 2 ADD_STAGES; // MUST BE DIVISIBLE INTO BI_SIZE
+typedef 8 ADD_STAGES; // MUST BE DIVISIBLE INTO BI_SIZE
 typedef TDiv#(BI_SIZE, ADD_STAGES) ADD_WIDTH;
 
 typedef struct {

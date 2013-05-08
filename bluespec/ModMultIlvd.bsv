@@ -33,7 +33,7 @@ module mkModMultIlvd(ModMultIlvd);
   Reg#(Maybe#(Bit#(0))) wait_for_sub2 <- mkReg(tagged Invalid);
 
 //	Adder adder <- mkCLAdder();
-	Adder adder <- mkBypassFoldedAdder();
+	Adder adder <- mkFoldedAdder();
  
   rule doShift (state == Shift);
     //$display("mod mult function i = %d", i);
