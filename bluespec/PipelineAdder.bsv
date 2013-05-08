@@ -4,6 +4,7 @@ import ClientServer::*;
 import GetPut::*;
 import FIFO::*;
 import FIFOF::*;
+import BRAMFIFO::*;
 import Vector::*;
 import Randomizable::*;
 
@@ -77,8 +78,8 @@ module mkPipelineAdder(Adder);
 	
 	endfunction
 
-  FIFOF#(AdderOperands) inputFIFO <- mkFIFOF();
-  FIFO#(BIG_INT) outputFIFO <- mkFIFO();
+  FIFOF#(AdderOperands) inputFIFO <- mkSizedBRAMFIFOF(1);
+  FIFO#(BIG_INT) outputFIFO <- mkSizedBRAMFIFO(1);
   
   Reg#(State) state <- mkReg(Add);
 	Reg#(Int#(TAdd#(TLog#(ADD_STAGES), 1))) add_stage <- mkReg(0);

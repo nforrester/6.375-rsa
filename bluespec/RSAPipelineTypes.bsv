@@ -9,7 +9,7 @@ typedef Bit#(RSA_PACKET_SIZE) RSA_PACKET;
 typedef TDiv#(BI_SIZE, 8) PACKET_COUNT;
 
 // Adder types
-typedef 2 ADD_STAGES; // MUST BE DIVISIBLE INTO BI_SIZE
+typedef 3 ADD_STAGES; // MUST BE DIVISIBLE INTO BI_SIZE
 typedef TDiv#(BI_SIZE, ADD_STAGES) ADD_WIDTH;
 
 typedef struct {

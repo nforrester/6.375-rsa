@@ -6,6 +6,7 @@ import ClientServer::*;
 import GetPut::*;
 import FIFO::*;
 import FIFOF::*;
+import BRAMFIFO::*;
 import Vector::*;
 
 
@@ -43,8 +44,8 @@ typedef enum {PutMult, GetMult, Done} State deriving (Bits, Eq);
 
 
 module mkModExpt(ModExpt);
-  FIFOF#(Vector#(3, BIG_INT)) inputFIFO <- mkFIFOF();
-  FIFO#(BIG_INT) outputFIFO <- mkFIFO();
+  FIFOF#(Vector#(3, BIG_INT)) inputFIFO <- mkSizedBRAMFIFOF(1);
+  FIFO#(BIG_INT) outputFIFO <- mkSizedBRAMFIFO(1);
   
   Reg#(BIG_INT) b <- mkReg(0);
 	Reg#(BIG_INT) e <- mkReg(0);

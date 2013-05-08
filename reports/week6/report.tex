@@ -306,7 +306,7 @@ space and did not fit onto the FPGA without modifying the ModExpt architecture, 
 in a system performance drop.
 
 % Folded adder
-The folded added performs the 1024 bit addition/subtraction in multiple stages, carrying
+The folded adder performs the 1024 bit addition/subtraction in multiple stages, carrying
 the overflow bit to the next stage. Since the addition modules are called a million times for a
 1024 bit operation, there is a significant throughput penalty to using this module. Due to 
 the design of ModMultIlvd, it is not possible to pipeline the addition stages.
@@ -316,7 +316,7 @@ A clock divider splits the 50 Mhz SceMi clock into a 25 Mhz adder clock, which u
 the regular ripple carry adder. Clock crossing FIFOs were added for correctness.
 
 Early this week, we will measure the wall clock performance of all three approaches
-and select the highest performing topology. Since some of the adders use 99% of the 
+and select the highest performing topology. Since some of the adders use 99 percent of the 
 FPGA slices, compilation takes 4+ hours and we're still waiting on the 
 synthesis results for the folded adder.
 

@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdflatex 2013.2.28)  29 APR 2013 00:22
+This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdflatex 2013.2.28)  6 MAY 2013 03:07
 entering extended mode
  %&-line parsing enabled.
 **report.tex
@@ -553,115 +553,115 @@ File: top_level.png Graphic file (type png)
 96.85625pt>
 File: modexpt.png Graphic file (type png)
  <use modexpt.png>
-[5 <./modexpt.png>] <modmult.png, id=35, 640.64343pt x 452.4403pt>
+<modmult.png, id=31, 640.64343pt x 452.4403pt>
 File: modmult.png Graphic file (type png)
-
-<use modmult.png> <modMultGraph.png, id=36, 449.68pt x 457.71pt>
+ <use modmult.png> [5 <./modexpt.png>] [6 <./modmult.png>] <modMultGraph.png, i
+d=40, 449.68pt x 457.71pt>
 File: modMultGraph.png Graphic file (type png)
 
 <use modMultGraph.png>
-Underfull \hbox (badness 10000) in paragraph at lines 204--205
+Underfull \hbox (badness 10000) in paragraph at lines 200--201
 
  []
 
-[6 <./modmult.png>]
-Overfull \hbox (65.6969pt too wide) in paragraph at lines 208--209
+
+Overfull \hbox (65.6969pt too wide) in paragraph at lines 204--205
 \OT1/cmr/m/n/12 The mod-ules we im-ple-mented are: \OT1/cmtt/m/n/12 SceMiLayer.
 bsv, RSAPipeline.bsv, RSA.bsv, RSAPipelinetypes.bsv,
  []
 
-[7 <./modMultGraph.png (PNG copy)>] [8] [9] [10]
-Overfull \hbox (50.91269pt too wide) in paragraph at lines 361--361
+[7 <./modMultGraph.png (PNG copy)>] [8] [9] [10] [11]
+Overfull \hbox (50.91269pt too wide) in paragraph at lines 383--383
 []\OT1/cmtt/m/n/12 Timing constraint: Default period analysis for Clock 'scemi_
 clk_port_clkgen/current_clk1'[] 
  []
 
 
-Overfull \hbox (106.48772pt too wide) in paragraph at lines 361--361
+Overfull \hbox (106.48772pt too wide) in paragraph at lines 383--383
 []  \OT1/cmtt/m/n/12 Source:            scemi_dut_dut_dutIfc_m_dut/rsa_modexpt_
 modmult0_inputFIFO/data0_reg_1032 (FF)[] 
  []
 
 
-Overfull \hbox (20.03767pt too wide) in paragraph at lines 361--361
+Overfull \hbox (20.03767pt too wide) in paragraph at lines 383--383
 []  \OT1/cmtt/m/n/12 Destination:       scemi_dut_dut_dutIfc_m_dut/rsa_modexpt_
 modmult0_p_val_1031 (FF)[] 
  []
 
 
-Overfull \hbox (409.06287pt too wide) in paragraph at lines 361--361
+Overfull \hbox (409.06287pt too wide) in paragraph at lines 383--383
 []  \OT1/cmtt/m/n/12 Data Path: scemi_dut_dut_dutIfc_m_dut/rsa_modexpt_modmult0
 _inputFIFO/data0_reg_1032 to scemi_dut_dut_dutIfc_m_dut/rsa_modexpt_modmult0_p_
 val_1031[] 
  []
 
-[11]
-Overfull \hbox (507.86292pt too wide) in paragraph at lines 361--361
+
+Overfull \hbox (507.86292pt too wide) in paragraph at lines 383--383
 []     \OT1/cmtt/m/n/12 LUT2:I0->O            1   0.094   0.000  Madd_MUX_rsa_m
 odexpt_modmult0_p_val_write_1__VAL_5_lut<0> (Madd_MUX_rsa_modexpt_modmult0_p_va
 l_write_1__VAL_5_lut<0>)[] 
  []
 
 
-Overfull \hbox (495.51291pt too wide) in paragraph at lines 361--361
+Overfull \hbox (495.51291pt too wide) in paragraph at lines 383--383
 []     \OT1/cmtt/m/n/12 MUXCY:S->O            1   0.372   0.000  Madd_MUX_rsa_m
 odexpt_modmult0_p_val_write_1__VAL_5_cy<0> (Madd_MUX_rsa_modexpt_modmult0_p_val
 _write_1__VAL_5_cy<0>)[] 
  []
 
 
-Overfull \hbox (495.51291pt too wide) in paragraph at lines 361--361
+Overfull \hbox (495.51291pt too wide) in paragraph at lines 383--383
 []     \OT1/cmtt/m/n/12 MUXCY:CI->O           1   0.026   0.000  Madd_MUX_rsa_m
 odexpt_modmult0_p_val_write_1__VAL_5_cy<1> (Madd_MUX_rsa_modexpt_modmult0_p_val
 _write_1__VAL_5_cy<1>)[] 
  []
 
-
-Overfull \hbox (495.51291pt too wide) in paragraph at lines 361--361
+[12]
+Overfull \hbox (495.51291pt too wide) in paragraph at lines 383--383
 []     \OT1/cmtt/m/n/12 MUXCY:CI->O           1   0.026   0.000  Madd_MUX_rsa_m
 odexpt_modmult0_p_val_write_1__VAL_5_cy<2> (Madd_MUX_rsa_modexpt_modmult0_p_val
 _write_1__VAL_5_cy<2>)[] 
  []
 
 
-Overfull \hbox (495.51291pt too wide) in paragraph at lines 361--361
+Overfull \hbox (495.51291pt too wide) in paragraph at lines 383--383
 []     \OT1/cmtt/m/n/12 MUXCY:CI->O           1   0.026   0.000  Madd_MUX_rsa_m
 odexpt_modmult0_p_val_write_1__VAL_5_cy<3> (Madd_MUX_rsa_modexpt_modmult0_p_val
 _write_1__VAL_5_cy<3>)[] 
  []
 
 
-Overfull \hbox (495.51291pt too wide) in paragraph at lines 361--361
+Overfull \hbox (495.51291pt too wide) in paragraph at lines 383--383
 []     \OT1/cmtt/m/n/12 MUXCY:CI->O           1   0.026   0.000  Madd_MUX_rsa_m
 odexpt_modmult0_p_val_write_1__VAL_5_cy<4> (Madd_MUX_rsa_modexpt_modmult0_p_val
 _write_1__VAL_5_cy<4>)[] 
  []
 
 
-Overfull \hbox (9.19325pt too wide) in paragraph at lines 389--391
+Overfull \hbox (9.19325pt too wide) in paragraph at lines 411--413
 []\OT1/cmr/m/n/12 To prove cor-rect-ness to the in-struc-tors, a sim-ple test-b
 ench will feed plain-text into an encryption-
  []
 
-[12] [13] (./report.aux) ) 
+[13] (./report.aux) ) 
 Here is how much of TeX's memory you used:
  11522 strings out of 493848
  210680 string characters out of 1152823
- 257662 words of memory out of 3000000
+ 257663 words of memory out of 3000000
  14550 multiletter control sequences out of 15000+50000
  12572 words of font info for 49 fonts, out of 3000000 for 9000
  714 hyphenation exceptions out of 8191
  56i,7n,55p,471b,254s stack positions out of 5000i,500n,10000p,200000b,50000s
-</usr/share/texmf-texlive/fonts/type1/public/amsfonts
-/cm/cmbx12.pfb></usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmex10.
-pfb></usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmmi12.pfb></usr/s
-hare/texmf-texlive/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/share/texmf-t
-exlive/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/share/texmf-texlive/fonts
-/type1/public/amsfonts/cm/cmr12.pfb></usr/share/texmf-texlive/fonts/type1/publi
-c/amsfonts/cm/cmr17.pfb></usr/share/texmf-texlive/fonts/type1/public/amsfonts/c
-m/cmr8.pfb></usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmsy10.pfb>
-</usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmtt12.pfb>
-Output written on report.pdf (13 pages, 242391 bytes).
+</usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/c
+mbx12.pfb></usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmex10.pfb><
+/usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmmi12.pfb></usr/share/
+texmf-texlive/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/share/texmf-texliv
+e/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/share/texmf-texlive/fonts/type
+1/public/amsfonts/cm/cmr12.pfb></usr/share/texmf-texlive/fonts/type1/public/ams
+fonts/cm/cmr17.pfb></usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmr
+8.pfb></usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr
+/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmtt12.pfb>
+Output written on report.pdf (13 pages, 243436 bytes).
 PDF statistics:
  96 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
