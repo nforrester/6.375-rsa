@@ -105,7 +105,7 @@ module mkModExpt(ModExpt);
 
     method ActionValue#(BIG_INT) getResult();
         doneFIFO.deq();
-        return e;
+        return c;
     endmethod
 endmodule
 
