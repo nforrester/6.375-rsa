@@ -48,7 +48,7 @@ module mkRSA (RSAServer);
     Vector#(PACKET_COUNT, Reg#(RSA_PACKET)) exponent_buffer <- replicateM(mkReg(0));    
     Vector#(PACKET_COUNT, Reg#(RSA_PACKET)) modulus_buffer <- replicateM(mkReg(0));
 
-    FIFO#(BIG_INT) outfifo <- mkFIFO(1);
+    FIFO#(BIG_INT) outfifo <- mkSizedFIFO(1);
     
     Reg#(Bit#(TAdd#(TLog#(BI_SIZE), 1))) i <- mkReg(0);
     
