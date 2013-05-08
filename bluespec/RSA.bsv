@@ -8,29 +8,20 @@ import ModExpt::*;
 //import CLAdder::*;
 // Struct to hold RSA packet data
 // (Usually 8 bit)
-// Doesn't make sense (Does it?) to send modulus,
-// maybe modify this later
 typedef struct {
-    Bit#(8) data;
-    Bit#(8) exponent;
-    Bit#(8) modulus;
+    Bit#(RSA_PACKET_SIZE) data;
+    Bit#(RSA_PACKET_SIZE) exponent;
+    Bit#(RSA_PACKET_SIZE) modulus;
 } Command deriving(Bits, Eq);
 
 typedef Server#(Command, BIG_INT) RSAServer;
 typedef enum {PutExpt, GetExpt, Idle, Reset} State deriving (Bits, Eq);
 
 module mkRSA (RSAServer);
-   // Empty tester <- mkCLAdderTest();
-		Reg#(State) state <- mkReg(Reset);
-		Reg#(Bit#(32)) hack <- mkReg(0);
-    Reg#(Bit#(32)) zero <- mkReg(0); // for testing if this equals zero!
+		Reg#(State) state <- mkReg(Idle);
 		// Concatenates chunks into one big BIG_INT
 		function BIG_INT toBigInt(Vector#(PACKET_COUNT, Reg#(RSA_PACKET)) data);
 			BIG_INT result = 0;
-			
-			/*// Reverse the packet count (remove this for other purposes) for(Integer 
-			i = 0; i < valueOf(PACKET_COUNT); i = i + 1) begin data[i] = 
-			data[valueOf(PACKET_COUNT) - i - 1]; end*/
 			
 			for(Integer i = 0; i < valueOf(BI_SIZE); i = i + 1) begin
 				Integer chunk_id = (i * valueOf(PACKET_COUNT)) / valueOf(BI_SIZE);
@@ -54,18 +45,6 @@ module mkRSA (RSAServer);
     
     // Once loading is complete, push data to ModExpt
    
-   	rule reset (hack != 173823);
-   			state <= Idle;
-   			hack <= 173823;
-   			i <= 0;
-   			for(Integer j = 0; j < valueOf(PACKET_COUNT); j = j + 1) begin
-   				data_buffer[j] <= 0;
-   				exponent_buffer[j] <= 0;
-   				modulus_buffer[j] <= 0;
-   			end
-   			
-  	endrule
-   
     rule pushExpt(state == PutExpt);
 
     		Vector#(3, BIG_INT) packet;
@@ -74,14 +53,12 @@ module mkRSA (RSAServer);
     		packet[0] = toBigInt(data_buffer);
     		packet[1] = toBigInt(exponent_buffer);
     		packet[2] = toBigInt(modulus_buffer);
-    		
-    	//	$display("Loaded modexpt");
-    		
+    
     		// Perform the calculation
-    	//	$display("Data %X", packet[0]);
-    //		$display("Mod %X", packet[2]);
-    //		$display("Exponent %X", packet[1]);
-    		modexpt.request.put(packet);
+    		$display("Done loading\nData %X", packet[0]);
+    		$display("Mod %X", packet[2]);
+    		$display("Exponent %X", packet[1]);
+    		modexpt.putData(packet);
     		
     		// Allow further loads
     		i <= 0;
@@ -90,8 +67,7 @@ module mkRSA (RSAServer);
   	endrule
   	
   	rule getExpt(state == GetExpt);
-  		  let r <- modexpt.response.get();
-  	    $display("Got modexpt");
+  		  let r <- modexpt.getResult();
   			outfifo.enq(r);
   			i <= 0;
   			state <= Idle;
@@ -114,7 +90,6 @@ module mkRSA (RSAServer);
         		if(i < fromInteger((valueOf(TDiv#(BI_SIZE, RSA_PACKET_SIZE)) - 1)) ) begin
         			i <= i + 1;
         		end else begin
-        			$display("Done loading");
         			state <= PutExpt;
         		end
         		

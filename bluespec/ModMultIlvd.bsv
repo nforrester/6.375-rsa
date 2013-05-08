@@ -29,9 +29,12 @@ module mkModMultIlvd(ModMultIlvd);
   Reg#(Maybe#(Bit#(0))) wait_for_add <- mkReg(tagged Invalid);
   Reg#(Maybe#(Bit#(0))) wait_for_sub1 <- mkReg(tagged Invalid);
   Reg#(Maybe#(Bit#(0))) wait_for_sub2 <- mkReg(tagged Invalid);
+
   Adder adder <- mkSlowClkAdder();
 //	Adder adder <- mkCLAdder();
 //	Adder adder <- mkSimpleAdder();
+//	Adder adder <- mkPipelineAdder();
+
   Reg#(Bool) hack <- mkReg(False);
   
   rule init(!hack);
@@ -116,6 +119,8 @@ module mkModMultIlvd(ModMultIlvd);
   endrule
 
 
+
+
   rule doPSubM2 (state == PsubM2);
 //  $display("doSub2");
     let in = inputFIFO.first();
@@ -142,9 +147,8 @@ module mkModMultIlvd(ModMultIlvd);
 
     state <= PsubM3;
 
-
-  endrule
-
+	endrule
+	
   rule doPSubM3(state == PsubM3);
   if(isValid(wait_for_sub2))begin
 //    $display("do sub 3 i = %d", i);
@@ -162,8 +166,9 @@ module mkModMultIlvd(ModMultIlvd);
     end
 
 
-  endrule
 
+
+  endrule
 
   rule doComplete (state == Done);
   let in = inputFIFO.first();
@@ -174,10 +179,7 @@ module mkModMultIlvd(ModMultIlvd);
     i <= fromInteger(valueof(BI_SIZE))-1;
     state <= Shift;
   endrule
-
    
   interface Put request = toPut(inputFIFO);
   interface Get response = toGet(outputFIFO);
 endmodule
-
-

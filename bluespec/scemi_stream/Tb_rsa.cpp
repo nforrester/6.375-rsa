@@ -12,6 +12,8 @@
 
 #include "ResetXactor.h"
 
+//#define DEBUG
+
 
 
 
@@ -35,7 +37,7 @@ void timer_poll(char *format, struct timeval *start) {
 	struct timeval now, diff;
 	gettimeofday(&now, NULL);
 	timersub(&now, start, &diff);
-	fprintf(stderr, format, diff.tv_sec, diff.tv_usec);
+	printf(format, diff.tv_sec, diff.tv_usec);
 }
 
 gcry_sexp_t sexp_new(const char *str) {
@@ -161,7 +163,7 @@ char* encrypt(rsa_packet * packet, char *public_key, char *plaintext){
 		printf("Error in gcry_pk_encrypt(): %s\nSource: %s\n", gcry_strerror(error), gcry_strsource(error));
 		exit(1);
 	}
-	timer_poll("libgcrypt    Encrypt: %d.%06d    seconds\n", &timer);
+	timer_poll("\nSoftware encrypt: %d.%06d    seconds\n", &timer);
 	
 	gcry_sexp_t cipher_sexp = gcry_sexp_cdr(gcry_sexp_find_token(r_ciph, "a", 1));
 	gcry_mpi_t cipher_mpi = gcry_sexp_nth_mpi(cipher_sexp, 0, GCRYMPI_FMT_USG);
@@ -182,7 +184,7 @@ char* decrypt(char *private_key, char *ciphertext){
 		printf("Error in gcry_pk_decrypt(): %s\nSource: %s\n", gcry_strerror(error), gcry_strsource(error));
 		exit(1);
 	}
-	timer_poll("libgcrypt    Decrypt: %d.%06d    seconds\n", &timer);
+	timer_poll("\nSoftware decrypt: %d.%06d    seconds\n", &timer);
 
 	gcry_mpi_t r_mpi = gcry_sexp_nth_mpi(r_plain, 0, GCRYMPI_FMT_USG);
 
@@ -266,6 +268,7 @@ int main(int argc, char* argv[])
 		int i;
 		bool cipher_done = 0;
 		Command cmd;
+		timeval hard_time;
 	
     int sceMiVersion = SceMi::Version( SCEMI_VERSION_STRING );
     SceMiParameters params("scemi.params");
@@ -291,7 +294,8 @@ int main(int argc, char* argv[])
 	
 		printf("Generating keypair in software...");
 		generate_key(&packet, &public_key, &private_key);
-			
+		
+		#ifdef DEFINE
 			printf("Raw data dump\n Modulus length: %zi\n", packet.mod_len);
 			for(i = 0; i < packet.mod_len; i++) {
 		  	printf("%02X", packet.mod[i]);
@@ -306,7 +310,7 @@ int main(int argc, char* argv[])
 			for(i = 0; i < packet.pub_len; i++) {
 		  	printf("%02X", packet.pub_exp[i]);
 		  }
-
+		#endif
 
 		printf("Public Key:\n%s\n", public_key);
 		printf("Private Key:\n%s\n", private_key);
@@ -343,7 +347,7 @@ int main(int argc, char* argv[])
     
 		// Pack the command for transport to FPGA
 		// Command is specified in Command.h, run build and look in tbinclude
-		// Assuming mod_len >> priv_len/pub_len/len(ciphertext)
+		// Assuming mod_len >= priv_len/pub_len/len(ciphertext)
 		for(i = 0; i < packet.mod_len; i++) {
 			cmd.m_modulus = packet.mod[packet.mod_len - i - 1];
 			
@@ -361,38 +365,21 @@ int main(int argc, char* argv[])
 				cmd.m_data = 0;
 			}
 			
-			/*if(i == 0) {
-				cmd.m_modulus = 255;
-				cmd.m_data = 2;
-				cmd.m_exponent = 8;
-			} else {
-				cmd.m_modulus = 0;
-				cmd.m_data = 0;
-				cmd.m_exponent = 0;	
-			}*/
-			
-			printf("Sending message %i, mod: %X coeff: %X data:%X\n", i, cmd.m_data.get(), cmd.m_exponent.get(), cmd.m_data.get());
+			//printf("Sending message %i, mod: %X coeff: %X data:%X\n", i, cmd.m_data.get(), cmd.m_exponent.get(), cmd.m_data.get());
     	inport.sendMessage(cmd);
 		}
-		
-		/*while(i > 127) {
-			printf("Sending padding %i", i);
-			cmd.m_modulus = 0;
-			cmd.m_exponent = 0;
-			cmd.m_data = 0;
-			inport.sendMessage(cmd);
-			i++;
-		}*/
 			
-			printf("Sending padding, 1 packet");
-			cmd.m_modulus = 0;
-			cmd.m_exponent = 0;
-			cmd.m_data = 0;
-			inport.sendMessage(cmd);
-		
-		 printf("Getting result..");
+		printf("Sending padding, 1 packet");
+		cmd.m_modulus = 0;
+		cmd.m_exponent = 0;
+		cmd.m_data = 0;
+		timer_start(&hard_time);
+		inport.sendMessage(cmd);
+			
+		printf("Getting result..");
 		
     std::cout << "Result: " << outport.getMessage() << std::endl;
+    timer_poll("FPGA wall time: %d.%06d    seconds\n", &hard_time);
 
     std::cout << "shutting down..." << std::endl;
     shutdown.blocking_send_finish();

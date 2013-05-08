@@ -5,13 +5,14 @@ import ModMultIlvd::*;
 import ClientServer::*;
 import GetPut::*;
 import FIFO::*;
+import BRAMFIFO::*;
 import Vector::*;
 
 
-typedef Server#(
-  Vector#(3, BIG_INT),  // changed this to hardcoded 3 since the algo is hardcoded
-  BIG_INT
-) ModExpt;
+interface ModExpt;
+    method Action putData(Vector#(3, BIG_INT) data);
+    method ActionValue#(BIG_INT) getResult();
+endinterface
 
 
 /* Performs 
@@ -42,39 +43,24 @@ typedef enum {Start, PutMult1, PutMult2, GetMult} State deriving (Bits, Eq);
 
 
 module mkModExpt(ModExpt);
-  FIFO#(Vector#(3, BIG_INT)) inputFIFO <- mkSizedFIFO(1);
-  FIFO#(BIG_INT) outputFIFO <- mkSizedFIFO(1);
+  FIFO#(Bit#(1)) doneFIFO <- mkSizedFIFO(1);
   
   Reg#(BIG_INT) b <- mkRegU;
 	Reg#(BIG_INT) e <- mkRegU;
 	Reg#(BIG_INT) c <- mkRegU;
 	Reg#(BIG_INT) m <- mkRegU;
 
-	ModExpt modmult <- mkModMultIlvd();
-
+	ModMultIlvd modmult <- mkModMultIlvd();
 
   Reg#(State) state <- mkReg(Start);
 
-	rule start(state == Start);
-   // $display("modExpt \t\t Start");
-    let packet_in = inputFIFO.first();
-    inputFIFO.deq();
-  
-    b <= packet_in[0];
-    e <= packet_in[1];
-    m <= packet_in[2];
-    c <= 1;
-
-    state <= PutMult1;
-	endrule
-
   rule doPutMult1 (state==PutMult1);
     if(e==0)begin
-      outputFIFO.enq(c);
+      doneFIFO.enq(0);
       state <= Start;
     end else begin
       if(e[0] == 1) begin
-        Vector#(3, BIG_INT)packet_out =?;
+        Vector#(3, BIG_INT) packet_out =?;
         packet_out[0] = b;
         packet_out[1] = c;
         packet_out[2] = m;
@@ -108,8 +94,18 @@ module mkModExpt(ModExpt);
   endrule
 
  
-  interface Put request = toPut(inputFIFO);
-  interface Get response = toGet(outputFIFO);
+    method Action putData(Vector#(3, BIG_INT) data);
+		    b <= data[0];
+		    e <= data[1];
+		    m <= data[2];
+		    c <= 1;
+		    state <= PutMult1;
+    endmethod
+
+    method ActionValue#(BIG_INT) getResult();
+        doneFIFO.deq();
+        return c;
+    endmethod
 endmodule
 
 

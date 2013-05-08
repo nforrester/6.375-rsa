@@ -4,12 +4,12 @@ import ClientServer::*;
 import GetPut::*;
 import FIFO::*;
 import FIFOF::*;
+import BRAMFIFO::*;
 import Vector::*;
 import Randomizable::*;
 
-
 typedef Server#(
-  Vector#(3, BIG_INT),  // changed this to hardcoded 3 since the algo is hardcoded
+  AdderOperands,
   BIG_INT
 ) Adder;
 
@@ -36,21 +36,22 @@ typedef Server#(
 typedef enum {Add, Done} State deriving (Bits, Eq);
 
 
-module mkSimplePipelineAdder(Adder);
-	FIFOF#(Vector#(3, BIG_INT)) inputFIFO <- mkFIFOF();
+module mkSimpleAdder(Adder);
+	FIFOF#(AdderOperands) inputFIFO <- mkFIFOF();
   FIFO#(BIG_INT) outputFIFO <- mkFIFO();
 
 
-  rule doAdd;
+  rule doAddORSub;
     let in = inputFIFO.first();
-    let res = ?;
     inputFIFO.deq();
+    let res = ?;
 
-		if(in[2][0] == 0) begin
-    	res = in[0] + in[1];
-  	end else begin
-  		res = in[0] - in[1];
-  	end
+
+    if(in.do_sub)begin
+      res = in.a - in.b;
+    end else begin
+      res = in.a + in.b;
+    end
     outputFIFO.enq(res);
   endrule
 
@@ -58,13 +59,12 @@ module mkSimplePipelineAdder(Adder);
   interface Put request = toPut(inputFIFO);
   interface Get response = toGet(outputFIFO);
 
-
 endmodule
 
 
 module mkPipelineAdder(Adder);
 
-	// Concatenates chunks into one big BIG_INT
+	// Concatenates chunks into one BIG_INT
 	function BIG_INT toBigInt(Vector#(ADD_STAGES, Reg#(Bit#(ADD_WIDTH))) data);
 		BIG_INT result = 0;
 		
@@ -78,35 +78,34 @@ module mkPipelineAdder(Adder);
 	
 	endfunction
 
-  FIFOF#(Vector#(3, BIG_INT)) inputFIFO <- mkFIFOF();
-  FIFO#(BIG_INT) outputFIFO <- mkFIFO();
+  FIFOF#(AdderOperands) inputFIFO <- mkSizedBRAMFIFOF(1);
+  FIFO#(BIG_INT) outputFIFO <- mkSizedBRAMFIFO(1);
   
   Reg#(State) state <- mkReg(Add);
 	Reg#(Int#(TAdd#(TLog#(ADD_STAGES), 1))) add_stage <- mkReg(0);
 	Reg#(Bit#(TAdd#(ADD_WIDTH, 1))) cs <- mkReg(0);
+	Reg#(Int#(TAdd#(TLog#(BI_SIZE), 1))) idx_lo <- mkReg(0);
+	Reg#(Int#(TAdd#(TLog#(BI_SIZE), 1))) idx_hi <- mkReg(fromInteger(valueOf(ADD_WIDTH)) - 1);	
 	Vector#(ADD_STAGES, Reg#(Bit#(ADD_WIDTH))) result <- replicateM(mkReg(0));
 
 	rule calculate(state == Add);
-    let a = inputFIFO.first()[0];
-  	let b = inputFIFO.first()[1];
-  	let c = inputFIFO.first()[2]; // This is okay: BSV will clip extra bits
-  	let c_in = ?;
-  	
-  	// If external carry in is 1, then add it in
-  	if(c[0] == 1 && add_stage == 0) begin
-  		c_in = 1;
-  	end else begin
-  		c_in = 0;
-  	end
-  	
+    let a = inputFIFO.first().a;
+  	let b = inputFIFO.first().b;
+  	let sub = inputFIFO.first().do_sub; // This is okay: BSV will clip extra bits
+ 		
+ 		// If we're subtracting, flip the negative value and add 1
+  	let c_in = (sub && add_stage == 0) ? 1 : 0;
+  	b = sub ? ~b : b;
+
 		// Need this width for the bit select multiplier
 		Int#(TAdd#(TLog#(BI_SIZE), 1)) add_width = fromInteger(valueOf(ADD_WIDTH));
 		
 		// Select the relevant chunk of the input data
-   	//$display("Selecting [%d:%d]", zeroExtend(add_stage) * add_width + (add_width-1), zeroExtend(add_stage) * add_width);
-		// UNOPTIMAL: no need for multipliers here, can latch indices and just do an add
-		Bit#(TAdd#(ADD_WIDTH, 1)) a_chunk = a[zeroExtend(add_stage) * add_width + (add_width-1) : zeroExtend(add_stage) * add_width];
-		Bit#(TAdd#(ADD_WIDTH, 1)) b_chunk = b[zeroExtend(add_stage) * add_width + (add_width-1) : zeroExtend(add_stage) * add_width];
+   	//$display("Selecting [%d:%d]", idx_hi, idx_lo);
+		Bit#(TAdd#(ADD_WIDTH, 1)) a_chunk = a[idx_hi : idx_lo];
+		Bit#(TAdd#(ADD_WIDTH, 1)) b_chunk = b[idx_hi : idx_lo];
+		idx_lo <= idx_lo + add_width;
+		idx_hi <= idx_hi + add_width;
 				
 		// Perform an addition, carrying in the carry bit from last cycle, and the external carry in
 	 	let cs_in = a_chunk + b_chunk  + zeroExtend(cs[add_width]) + c_in;
@@ -127,10 +126,12 @@ module mkPipelineAdder(Adder);
 
 	rule done(state == Done);	
 	
-	
 		outputFIFO.enq(toBigInt(result));
 		inputFIFO.deq();
 		add_stage <= 0;
+		cs <= 0;
+		idx_lo <= 0;
+		idx_hi <= fromInteger(valueOf(ADD_WIDTH)) - 1;
 		state <= Add;
 	
 	
@@ -158,7 +159,6 @@ module mkAddTest (Empty);
 
     rule store(feed == 1);
       feed <= 2;
-      Vector#(3, BIG_INT) operands;
       let a <- test_gen1.next();
       let b <- test_gen2.next();
       
@@ -166,15 +166,14 @@ module mkAddTest (Empty);
       a[valueOf(BI_SIZE)-1] = 0;
       b[valueOf(BI_SIZE)-1] = 0;
       
-      operands[0] = zeroExtend(a);
-      operands[1] = zeroExtend(b);
-      operands[2] = 0;
-      
-      sim_result <= operands[0] + operands[1];
+      if(a > b) begin 
+      	sim_result <= a - b;
+      	adder.request.put(AdderOperands{a:a, b:b, do_sub:True});
+    	end else begin
+    		sim_result <= b - a;
+      	adder.request.put(AdderOperands{a:b, b:a, do_sub:True});
+    	end
       //$display("%b\n+\n%b", operands[0], operands[1]);
-    		
-      
-      adder.request.put(operands);
     endrule
 
     rule load(feed == 2);
@@ -190,4 +189,3 @@ module mkAddTest (Empty);
       feed <= 1;
     endrule
 endmodule
-
