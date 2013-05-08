@@ -105,8 +105,8 @@ void generate_key(rsa_packet * packet, char **public_key, char **private_key) {
 	gcry_error_t error;
 	int i;
 	// Generate a reduced strength (to save time) RSA key, 1024 bits long
-	gcry_sexp_t params = sexp_new( "(genkey (rsa (transient-key) (nbits 3:512)))" );
-	//gcry_sexp_t params = sexp_new( "(genkey (rsa (transient-key) (nbits 4:1024)))" );
+	//gcry_sexp_t params = sexp_new( "(genkey (rsa (transient-key) (nbits 3:512)))" );
+	gcry_sexp_t params = sexp_new( "(genkey (rsa (transient-key) (nbits 4:1024)))" );
 	gcry_sexp_t r_key;
 	if ((error = gcry_pk_genkey(&r_key, params))) {
 		printf("Error in gcry_pk_genkey(): %s\nSource: %s\n", gcry_strerror(error), gcry_strsource(error));
@@ -295,7 +295,7 @@ int main(int argc, char* argv[])
 		printf("Generating keypair in software...");
 		generate_key(&packet, &public_key, &private_key);
 		
-		#ifdef DEFINE
+		#ifdef DEBUG
 			printf("Raw data dump\n Modulus length: %zi\n", packet.mod_len);
 			for(i = 0; i < packet.mod_len; i++) {
 		  	printf("%02X", packet.mod[i]);
@@ -348,31 +348,30 @@ int main(int argc, char* argv[])
 		// Pack the command for transport to FPGA
 		// Command is specified in Command.h, run build and look in tbinclude
 		// Assuming mod_len >= priv_len/pub_len/len(ciphertext)
-		for(i = 0; i < packet.mod_len; i++) {
-			cmd.m_modulus = packet.mod[packet.mod_len - i - 1];
+		
+		for(i = 0; i < ((cmd.getBitSize()/3) / 8); i++) {
+			
+			cmd.m_modulus.setByte(((cmd.getBitSize()/3) / 8) - i - 1, packet.mod[i]);
+
 			
 			// Send the data for decryption
 			if(i < packet.priv_len) {
-				cmd.m_exponent = packet.priv_exp[packet.priv_len - i - 1];
+				cmd.m_exponent.setByte(((cmd.getBitSize()/3) / 8) - i - 1, packet.priv_exp[i]);
 			} else {
-				cmd.m_exponent = 0;
+				cmd.m_exponent.setByte(((cmd.getBitSize()/3) / 8) - i - 1, 0);
 			}
 			
 			// Since the exponent is short, pack it backwards
 			if(i < packet.cipher_len) {
-				cmd.m_data = packet.ciphertext[packet.cipher_len - i - 1];
+				cmd.m_data.setByte(((cmd.getBitSize()/3) / 8) - i - 1, packet.ciphertext[i]);
 			} else {
-				cmd.m_data = 0;
+				cmd.m_exponent.setByte(((cmd.getBitSize()/3) / 8) - i - 1, 0);
 			}
 			
-			//printf("Sending message %i, mod: %X coeff: %X data:%X\n", i, cmd.m_data.get(), cmd.m_exponent.get(), cmd.m_data.get());
-    	inport.sendMessage(cmd);
+
 		}
 			
-		printf("Sending padding, 1 packet");
-		cmd.m_modulus = 0;
-		cmd.m_exponent = 0;
-		cmd.m_data = 0;
+
 		timer_start(&hard_time);
 		inport.sendMessage(cmd);
 			

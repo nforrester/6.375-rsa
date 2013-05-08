@@ -11,7 +11,7 @@ import Vector::*;
 
 
 interface ModExpt;
-    method Action putData(Vector#(3, BIG_INT) data);
+    method Action start();
     method ActionValue#(BIG_INT) getResult();
 endinterface
 
@@ -40,32 +40,30 @@ endinterface
 */
 
 
-typedef enum {Start, PutMult1, PutMult2, GetMult} State deriving (Bits, Eq);
+typedef enum {Idle, PutMult1, PutMult2, GetMult} State deriving (Bits, Eq);
 
 
-module mkModExpt(ModExpt);
+module mkModExpt#(Reg#(BIG_INT) b, Reg#(BIG_INT) e, Reg#(BIG_INT) m) (ModExpt);
   FIFO#(Bit#(1)) doneFIFO <- mkSizedFIFO(1);
   
-  Reg#(BIG_INT) b <- mkRegU;
-	Reg#(BIG_INT) e <- mkRegU;
 	Reg#(BIG_INT) c <- mkRegU;
-	Reg#(BIG_INT) m <- mkRegU;
 
 	ModMultIlvd modmult <- mkModMultIlvd();
 
-  Reg#(State) state <- mkReg(Start);
+  Reg#(State) state <- mkReg(Idle);
 
   rule doPutMult1 (state==PutMult1);
     if(e==0)begin
       doneFIFO.enq(0);
-      state <= Start;
+      $display("finished %X", c); 
+      state <= Idle;
     end else begin
       if(e[0] == 1) begin
         Vector#(3, BIG_INT) packet_out =?;
         packet_out[0] = b;
         packet_out[1] = c;
         packet_out[2] = m;
-        modmult.request.put(packet_out);
+        modmult.putData(packet_out);
       end
       state <= PutMult2;
     end
@@ -73,21 +71,21 @@ module mkModExpt(ModExpt);
   
   rule doPutMult2 (state==PutMult2);
     if(e[0] == 1) begin
-      let x <- modmult.response.get();
+      let x <- modmult.getResult();
       c <= x;
     end
     Vector#(3, BIG_INT) packet_out=?;
     packet_out[0] = b;
     packet_out[1] = b;
     packet_out[2] = m;
-    modmult.request.put(packet_out);
+    modmult.putData(packet_out);
 
     state <= GetMult;
 
   endrule
 
   rule doGetMult (state == GetMult);
-    let x <- modmult.response.get();
+    let x <- modmult.getResult();
     b <= x;
     
     e <= e >> 1;
@@ -95,10 +93,7 @@ module mkModExpt(ModExpt);
   endrule
 
  
-    method Action putData(Vector#(3, BIG_INT) data);
-		    b <= data[0];
-		    e <= data[1];
-		    m <= data[2];
+    method Action start();
 		    c <= 1;
 		    state <= PutMult1;
     endmethod
@@ -109,5 +104,29 @@ module mkModExpt(ModExpt);
     endmethod
 endmodule
 
+module mkModExptTest (Empty);
 
+		Reg#(BIG_INT) b <- mkReg(2328323);
+		Reg#(BIG_INT) e <- mkReg(12312);
+		Reg#(BIG_INT) m <- mkReg(13371337);
 
+    ModExpt modexpt <- mkModExpt(b, e, m);
+
+    Reg#(Bit#(32)) feed <- mkReg(0);
+    
+    rule store(feed == 0);
+    feed <= 1;
+    
+      modexpt.start;
+    endrule
+
+    rule load(feed == 1);
+      let result = ?;		
+      result <-	modexpt.getResult();
+      $display("Result: %d", result);
+      $display("Golden 2376662");
+      $finish();
+
+      feed <= 0;
+    endrule
+endmodule

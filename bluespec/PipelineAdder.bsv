@@ -4,7 +4,7 @@ import ClientServer::*;
 import GetPut::*;
 import FIFO::*;
 import FIFOF::*;
-import BRAMFIFO::*;
+import SpecialFIFOs::*;
 import Vector::*;
 import Randomizable::*;
 
@@ -78,8 +78,8 @@ module mkPipelineAdder(Adder);
 	
 	endfunction
 
-  FIFOF#(AdderOperands) inputFIFO <- mkSizedBRAMFIFOF(1);
-  FIFO#(BIG_INT) outputFIFO <- mkSizedBRAMFIFO(1);
+  FIFO#(AdderOperands) inputFIFO <- mkBypassFIFO();
+  FIFO#(Bit#(1)) doneFIFO <- mkFIFO;
   
   Reg#(State) state <- mkReg(Add);
 	Reg#(Int#(TAdd#(TLog#(ADD_STAGES), 1))) add_stage <- mkReg(0);
@@ -91,15 +91,16 @@ module mkPipelineAdder(Adder);
 	rule calculate(state == Add);
     let a = inputFIFO.first().a;
   	let b = inputFIFO.first().b;
-  	let sub = inputFIFO.first().do_sub; // This is okay: BSV will clip extra bits
- 		
+  	let sub = inputFIFO.first().do_sub;
+  	
+  	// Need this width for the bit select multiplier
+		Int#(TAdd#(TLog#(BI_SIZE), 1)) add_width = fromInteger(valueOf(ADD_WIDTH));
+  	
  		// If we're subtracting, flip the negative value and add 1
-  	let c_in = (sub && add_stage == 0) ? 1 : 0;
+  	let sub_in = (sub && add_stage == 0) ? 1'b1 : 1'b0;
+  	let c_in = sub_in | cs[add_width];
   	b = sub ? ~b : b;
 
-		// Need this width for the bit select multiplier
-		Int#(TAdd#(TLog#(BI_SIZE), 1)) add_width = fromInteger(valueOf(ADD_WIDTH));
-		
 		// Select the relevant chunk of the input data
    	//$display("Selecting [%d:%d]", idx_hi, idx_lo);
 		Bit#(TAdd#(ADD_WIDTH, 1)) a_chunk = a[idx_hi : idx_lo];
@@ -108,7 +109,7 @@ module mkPipelineAdder(Adder);
 		idx_hi <= idx_hi + add_width;
 				
 		// Perform an addition, carrying in the carry bit from last cycle, and the external carry in
-	 	let cs_in = a_chunk + b_chunk  + zeroExtend(cs[add_width]) + c_in;
+	 	let cs_in = a_chunk + b_chunk + zeroExtend(c_in);
 		cs <= cs_in;
 		
 		// Store the result in the output buffer
@@ -116,7 +117,7 @@ module mkPipelineAdder(Adder);
 
 		add_stage <= add_stage + 1;
 		
-		//$display("Adding stage %d, %b + %b = %b" , add_stage, a_chunk, b_chunk, cs_in);
+		//$display("Adding stage %d, %b + %b + %d = %b" , add_stage, a_chunk, b_chunk, c_in, cs_in);
 		
 		if(add_stage == fromInteger(valueOf(ADD_STAGES) - 1)) begin
 			state <= Done;
@@ -126,7 +127,7 @@ module mkPipelineAdder(Adder);
 
 	rule done(state == Done);	
 	
-		outputFIFO.enq(toBigInt(result));
+		doneFIFO.enq(0);
 		inputFIFO.deq();
 		add_stage <= 0;
 		cs <= 0;
@@ -138,7 +139,13 @@ module mkPipelineAdder(Adder);
 	endrule
 	
   interface Put request = toPut(inputFIFO);
-  interface Get response = toGet(outputFIFO);
+  
+  interface Get response;
+    method ActionValue#(BIG_INT) get();
+    		doneFIFO.deq();
+        return toBigInt(result);
+    endmethod
+  endinterface
 endmodule
 
 
