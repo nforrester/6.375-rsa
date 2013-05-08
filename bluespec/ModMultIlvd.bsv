@@ -19,8 +19,8 @@ typedef Server#(
 // [0] = X, [1] = Y, [2]= M
 // Get: Of type  FIFO#(BIG_INT)
 module mkModMultIlvd(ModMultIlvd);
-  FIFO#(Vector#(3, BIG_INT)) inputFIFO <- mkFIFO();
-  FIFO#(BIG_INT) outputFIFO <- mkFIFO();
+  FIFO#(Vector#(3, BIG_INT)) inputFIFO <- mkFIFO(1);
+  FIFO#(BIG_INT) outputFIFO <- mkFIFO(1);
   Reg#(Bit#(32)) i <- mkReg(0);
   Reg#(BIG_INT) p_val <- mkReg(0);
   Reg#(BIG_INT) x_val <- mkRegU;

@@ -43,8 +43,8 @@ typedef enum {Start, PutMult1, PutMult2, GetMult} State deriving (Bits, Eq);
 
 
 module mkModExpt(ModExpt);
-  FIFOF#(Vector#(3, BIG_INT)) inputFIFO <- mkFIFOF();
-  FIFO#(BIG_INT) outputFIFO <- mkFIFO();
+  FIFOF#(Vector#(3, BIG_INT)) inputFIFO <- mkFIFOF(1);
+  FIFO#(BIG_INT) outputFIFO <- mkFIFO(1);
   
   Reg#(BIG_INT) b <- mkRegU;
 	Reg#(BIG_INT) e <- mkRegU;

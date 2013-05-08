@@ -36,8 +36,8 @@ typedef Server#(
 
 
 module mkWrappedAdder(Clocks::ClockDividerIfc clk, Reset rst, Adder ifc);
-  SyncFIFOIfc#(AdderOperands) inputFIFO <- mkSyncFIFOToSlow(2, clk, rst);
-  SyncFIFOIfc#(BIG_INT) outputFIFO <- mkSyncFIFOToFast(2, clk, rst);
+  SyncFIFOIfc#(AdderOperands) inputFIFO <- mkSyncFIFOToSlow(1, clk, rst);
+  SyncFIFOIfc#(BIG_INT) outputFIFO <- mkSyncFIFOToFast(1, clk, rst);
 
   rule doAddORSub;
     let in = inputFIFO.first();
