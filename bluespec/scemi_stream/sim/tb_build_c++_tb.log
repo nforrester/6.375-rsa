@@ -9,19 +9,19 @@
 ../Tb_rsa.cpp: In function ‘int main(int, char**)’:
 ../Tb_rsa.cpp:318:21: warning: deprecated conversion from string constant to ‘char*’ [-Wwrite-strings]
 ../Tb_rsa.cpp:382:66: warning: deprecated conversion from string constant to ‘char*’ [-Wwrite-strings]
-/tmp/ccJG4Ltg.o: In function `sexp_new(char const*)':
+/tmp/cc84P5L6.o: In function `sexp_new(char const*)':
 Tb_rsa.cpp:(.text+0x10c): undefined reference to `gcry_sexp_new'
 Tb_rsa.cpp:(.text+0x124): undefined reference to `gcry_strsource'
 Tb_rsa.cpp:(.text+0x131): undefined reference to `gcry_strerror'
-/tmp/ccJG4Ltg.o: In function `sexp_string(gcry_sexp*)':
+/tmp/cc84P5L6.o: In function `sexp_string(gcry_sexp*)':
 Tb_rsa.cpp:(.text+0x232): undefined reference to `gcry_sexp_sprint'
 Tb_rsa.cpp:(.text+0x242): undefined reference to `gcry_malloc'
 Tb_rsa.cpp:(.text+0x286): undefined reference to `gcry_sexp_sprint'
-/tmp/ccJG4Ltg.o: In function `crypto_init()':
+/tmp/cc84P5L6.o: In function `crypto_init()':
 Tb_rsa.cpp:(.text+0x2b8): undefined reference to `gcry_check_version'
 Tb_rsa.cpp:(.text+0x2ea): undefined reference to `gcry_control'
 Tb_rsa.cpp:(.text+0x2fe): undefined reference to `gcry_control'
-/tmp/ccJG4Ltg.o: In function `generate_key(rsa_packet*, char**, char**)':
+/tmp/cc84P5L6.o: In function `generate_key(rsa_packet*, char**, char**)':
 Tb_rsa.cpp:(.text+0x33c): undefined reference to `gcry_pk_genkey'
 Tb_rsa.cpp:(.text+0x354): undefined reference to `gcry_strsource'
 Tb_rsa.cpp:(.text+0x361): undefined reference to `gcry_strerror'
@@ -39,7 +39,7 @@ Tb_rsa.cpp:(.text+0x45a): undefined reference to `gcry_sexp_nth_mpi'
 Tb_rsa.cpp:(.text+0x489): undefined reference to `gcry_mpi_print'
 Tb_rsa.cpp:(.text+0x4ba): undefined reference to `gcry_mpi_print'
 Tb_rsa.cpp:(.text+0x4eb): undefined reference to `gcry_mpi_print'
-/tmp/ccJG4Ltg.o: In function `encrypt(rsa_packet*, char*, char*)':
+/tmp/cc84P5L6.o: In function `encrypt(rsa_packet*, char*, char*)':
 Tb_rsa.cpp:(.text+0x559): undefined reference to `gcry_mpi_scan'
 Tb_rsa.cpp:(.text+0x571): undefined reference to `gcry_strsource'
 Tb_rsa.cpp:(.text+0x57e): undefined reference to `gcry_strerror'
@@ -53,7 +53,7 @@ Tb_rsa.cpp:(.text+0x6a7): undefined reference to `gcry_sexp_find_token'
 Tb_rsa.cpp:(.text+0x6af): undefined reference to `gcry_sexp_cdr'
 Tb_rsa.cpp:(.text+0x6c9): undefined reference to `gcry_sexp_nth_mpi'
 Tb_rsa.cpp:(.text+0x6fe): undefined reference to `gcry_mpi_print'
-/tmp/ccJG4Ltg.o: In function `decrypt(char*, char*)':
+/tmp/cc84P5L6.o: In function `decrypt(char*, char*)':
 Tb_rsa.cpp:(.text+0x765): undefined reference to `gcry_pk_decrypt'
 Tb_rsa.cpp:(.text+0x77d): undefined reference to `gcry_strsource'
 Tb_rsa.cpp:(.text+0x78a): undefined reference to `gcry_strerror'
@@ -61,7 +61,7 @@ Tb_rsa.cpp:(.text+0x7d0): undefined reference to `gcry_sexp_nth_mpi'
 Tb_rsa.cpp:(.text+0x7ed): undefined reference to `gcry_mpi_aprint'
 Tb_rsa.cpp:(.text+0x805): undefined reference to `gcry_strsource'
 Tb_rsa.cpp:(.text+0x812): undefined reference to `gcry_strerror'
-/tmp/ccJG4Ltg.o: In function `sign(char*, char*)':
+/tmp/cc84P5L6.o: In function `sign(char*, char*)':
 Tb_rsa.cpp:(.text+0x86d): undefined reference to `gcry_mpi_scan'
 Tb_rsa.cpp:(.text+0x885): undefined reference to `gcry_strsource'
 Tb_rsa.cpp:(.text+0x892): undefined reference to `gcry_strerror'
@@ -71,7 +71,7 @@ Tb_rsa.cpp:(.text+0x8f7): undefined reference to `gcry_strerror'
 Tb_rsa.cpp:(.text+0x950): undefined reference to `gcry_pk_sign'
 Tb_rsa.cpp:(.text+0x968): undefined reference to `gcry_strsource'
 Tb_rsa.cpp:(.text+0x975): undefined reference to `gcry_strerror'
-/tmp/ccJG4Ltg.o: In function `verify(char*, char*, char*)':
+/tmp/cc84P5L6.o: In function `verify(char*, char*, char*)':
 Tb_rsa.cpp:(.text+0x9ed): undefined reference to `gcry_mpi_scan'
 Tb_rsa.cpp:(.text+0xa05): undefined reference to `gcry_strsource'
 Tb_rsa.cpp:(.text+0xa12): undefined reference to `gcry_strerror'

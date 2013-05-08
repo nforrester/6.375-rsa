@@ -1,8 +1,8 @@
 import GetPut::*;
 import ClientServer::*;
 
-//typedef 1032 BI_SIZE;
-typedef 520 BI_SIZE;
+typedef 1032 BI_SIZE;
+//typedef 520 BI_SIZE;
 //typedef 1032 NUM_BITS_IN_CHUNK;
 
 //typedef 1024 RSA_SIZE;

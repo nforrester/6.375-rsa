@@ -31,7 +31,7 @@ endmodule
 
 
 
-typedef enum {Shift, XiY, AddPI, PsubM1, PsubM2, PsubM3,  Done} State deriving (Bits,Eq);
+typedef enum {Shift, XiY, AddPI, PsubM, GetRes, Done} State deriving (Bits,Eq);
 typedef Server#(
   Vector#(3, BIG_INT),  // changed this to hardcoded 3 since the algo is hardcoded
   BIG_INT
@@ -50,12 +50,10 @@ module mkModMultIlvd(ModMultIlvd);
   Reg#(State) state <- mkReg(Shift);
   
   Reg#(Maybe#(Bit#(0))) wait_for_add <- mkReg(tagged Invalid);
-  Reg#(Maybe#(Bit#(0))) wait_for_sub1 <- mkReg(tagged Invalid);
-  Reg#(Maybe#(Bit#(0))) wait_for_sub2 <- mkReg(tagged Invalid);
   Adder adder <- mkAdder();
-  Adder subtracter <- mkSubtracter();
-
-
+  Adder subtracter1 <- mkSubtracter();
+  Adder subtracter2 <- mkSubtracter();
+  Integer msb = valueof(BI_SIZE) -1;
   Reg#(Bool) hack <- mkReg(False);
   
   rule init(!hack);
@@ -96,68 +94,47 @@ module mkModMultIlvd(ModMultIlvd);
         next_p = p_val;
         end
         
-      state <= PsubM1;
+      state <= PsubM;
     endrule
-    
-  rule doPSubM1(state == PsubM1);
-		let in = inputFIFO.first();
+  rule doPSubM(state == PsubM);
+  	let in = inputFIFO.first();
     let m_val = in[2];
+    let m_val_dbl = m_val <<1;
     let next_p = ?;
     let p_val_result = ?;
-    
+
     // Grab the result from the adder if we're waiting for it
     if(isValid(wait_for_add)) begin
 			p_val_result <- adder.response.get();
 			wait_for_add <= tagged Invalid;
+      p_val <= p_val_result;
 		end else begin
 			// otherwise just put in the current p_val
 			p_val_result = p_val;
 		end
-    
-    if (p_val_result >= m_val) begin
-      // pack the sub request
-      let operands = 	AdderOperands{a:p_val_result, b:m_val, c_in:1};
-      subtracter.request.put(operands);
-      wait_for_sub1 <= tagged Valid 0;
-    end
-    
-    else begin
-      p_val <= p_val_result;
-    end
-    
-    state <= PsubM2;
+   
+    // request both subtractions
+    let operands1 = AdderOperands{a:p_val_result, b:m_val, c_in:1};
+    let operands2 = AdderOperands{a:p_val_result, b:m_val_dbl, c_in:1};
+
+    subtracter1.request.put(operands1);
+    subtracter2.request.put(operands2);
+    state <= GetRes;
   endrule
 
+  rule doGetRes(state == GetRes);
+    let r1 <- subtracter1.response.get();
+    let r2 <- subtracter2.response.get();
 
-
-
-  rule doPSubM2 (state == PsubM2);
-    let in = inputFIFO.first();
-    let m_val = in[2];  
-    let p_val_result = ?;
-    if(isValid(wait_for_sub1))begin
-      wait_for_sub1 <= tagged Invalid;
-      p_val_result <- subtracter.response.get();    
-      
-      if (p_val_result >= m_val) begin
-        let operands = 	AdderOperands{a:p_val_result, b:m_val, c_in:1};
-        subtracter.request.put(operands);
-        wait_for_sub2 <= tagged Valid 0;
+    if(r1[msb] == 0)begin
+      if(r2[msb] == 0) begin
+        p_val <= r2;
+      end
+      else begin
+        p_val <= r1;
       end
     end
-    else begin
-      p_val_result = p_val;
-    end
-    p_val <= p_val_result;
-    state <= PsubM3;
-	endrule
-	
-  rule doPSubM3(state == PsubM3);
-    if(isValid(wait_for_sub2))begin
-      let x <- subtracter.response.get();
-      p_val <= x;
-      wait_for_sub2 <= tagged Invalid;
-    end
+  
     i <= i -1;
     if(i==0)begin
       state <= Done;
@@ -165,9 +142,9 @@ module mkModMultIlvd(ModMultIlvd);
     else begin
       state <= Shift;
     end
+ endrule
 
-  endrule
-
+  
   rule doComplete (state == Done);
     let in = inputFIFO.first();
     inputFIFO.deq();
