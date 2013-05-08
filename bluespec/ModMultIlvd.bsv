@@ -7,7 +7,7 @@ import PipelineAdder::*;
 //import CLAdder::*;
 
 
-typedef enum {Idle, Shift, XiY, AddPI, PsubM1, PsubM2, PsubM3,  Done} State deriving (Bits,Eq);
+typedef enum {Idle, Shift, AddPI, PsubM1, PsubM2, PsubM3} State deriving (Bits,Eq);
 interface ModMultIlvd;
     method Action putData(Vector#(3, BIG_INT) data);
     method ActionValue#(BIG_INT) getResult();
@@ -19,13 +19,13 @@ endinterface
 // [0] = X, [1] = Y, [2]= M
 // Get: Of type  FIFO#(BIG_INT)
 module mkModMultIlvd(ModMultIlvd);
+  Reg#(BIG_INT) x_val <- mkReg(0);
   Reg#(BIG_INT) y_val <- mkReg(0);
   Reg#(BIG_INT) m_val <- mkReg(0);
-  
+  Reg#(BIG_INT) p_val <- mkReg(0);
+    
   FIFO#(Bit#(1)) doneFIFO <- mkSizedFIFO(1);
   Reg#(Bit#(32)) i <- mkReg(0);
-  Reg#(BIG_INT) p_val <- mkReg(0);
-  Reg#(BIG_INT) x_val <- mkRegU;
   Reg#(State) state <- mkReg(Idle);
   
   Reg#(Maybe#(Bit#(0))) wait_for_add <- mkReg(tagged Invalid);
@@ -33,26 +33,22 @@ module mkModMultIlvd(ModMultIlvd);
   Reg#(Maybe#(Bit#(0))) wait_for_sub2 <- mkReg(tagged Invalid);
 
 //	Adder adder <- mkCLAdder();
-	Adder adder <- mkPipelineAdder();
+	Adder adder <- mkBypassFoldedAdder();
  
   rule doShift (state == Shift);
     //$display("mod mult function i = %d", i);
-    let next_p = p_val << 1;
-    p_val <= next_p;
-    state <= XiY;
-  endrule
-
-  rule doXiY (state == XiY);
-
+    let p_shift = p_val << 1;
+      
       if(x_val[i] == 1)begin
       	// Pack the add request
-    	  let operands = 	AdderOperands{a:p_val, b:y_val, do_sub:False};
+    	  let operands = 	AdderOperands{a:p_shift, b:y_val, do_sub:False};
         adder.request.put(operands);
         wait_for_add <= tagged Valid 0;
         end
-           
+      
+      p_val <= p_shift;
       state <= PsubM1;
-    endrule
+  endrule
     
   rule doPSubM1(state == PsubM1);
     let p_val_result = ?;
@@ -71,15 +67,22 @@ module mkModMultIlvd(ModMultIlvd);
       let operands = 	AdderOperands{a:p_val_result, b:m_val, do_sub:True};
       adder.request.put(operands);
       wait_for_sub1 <= tagged Valid 0;
-      
+    	state <= PsubM2;
+    end else begin
+			  // No need to waste 2 cycles
+    	  i <= i - 1;
+    
+			  if(i == 0) begin
+			  	doneFIFO.enq(0);
+			    state <= Idle;
+			  end
+			  else begin
+			    state <= Shift;
+			  end
     end
     
-    else begin
-      p_val <= p_val_result;
-    end
+    p_val <= p_val_result;
     
-    state <= PsubM2;
-
   endrule
 
   rule doPSubM2 (state == PsubM2);
@@ -95,38 +98,38 @@ module mkModMultIlvd(ModMultIlvd);
     if (p_val_result >= m_val) begin
       let operands = 	AdderOperands{a:p_val_result, b:m_val, do_sub:True};
       adder.request.put(operands);
-      wait_for_sub2 <= tagged Valid 0;
+			state <= PsubM3;
+    end else begin
+    	  // No need to waste a cycle
+    	  i <= i - 1;
+    
+			  if(i == 0) begin
+			  	doneFIFO.enq(0);
+			    state <= Idle;
+			  end
+			  else begin
+			    state <= Shift;
+			  end
     end
 
     p_val <= p_val_result;
 
-    state <= PsubM3;
-
 	endrule
 	
   rule doPSubM3(state == PsubM3);
-  if(isValid(wait_for_sub2))begin
 
     let x <- adder.response.get();
     p_val <= x;
-    wait_for_sub2 <= tagged Invalid;
-  end
 
-
-   i <= i - 1;
-    
-  if(i==0)begin
-    state <= Done;
-  end
-  else begin
-    state <= Shift;
-  end
-  endrule
-
-  rule doComplete (state == Done);
-  	//$display("%d * %d mod %d = %d", x_val, y_val, m_val, p_val);
-    doneFIFO.enq(0);
-    state <= Idle;
+	  i <= i - 1;
+	    
+	  if(i == 0)begin
+	  	doneFIFO.enq(0);
+	    state <= Idle;
+	  end
+	  else begin
+	    state <= Shift;
+	  end
   endrule
    
     method Action putData(Vector#(3, BIG_INT) data);

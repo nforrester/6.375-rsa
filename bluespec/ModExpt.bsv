@@ -40,7 +40,7 @@ endinterface
 */
 
 
-typedef enum {Idle, PutMult1, PutMult2, GetMult} State deriving (Bits, Eq);
+typedef enum {Idle, PutMult, GetMult} State deriving (Bits, Eq);
 
 
 module mkModExpt#(Reg#(BIG_INT) b, Reg#(BIG_INT) e, Reg#(BIG_INT) m) (ModExpt);
@@ -48,54 +48,50 @@ module mkModExpt#(Reg#(BIG_INT) b, Reg#(BIG_INT) e, Reg#(BIG_INT) m) (ModExpt);
   
 	Reg#(BIG_INT) c <- mkRegU;
 
-	ModMultIlvd modmult <- mkModMultIlvd();
-
+	ModMultIlvd modmult0 <- mkModMultIlvd();
+  ModMultIlvd modmult1 <- mkModMultIlvd();
   Reg#(State) state <- mkReg(Idle);
 
-  rule doPutMult1 (state==PutMult1);
-    if(e==0)begin
+  rule putMult (state==PutMult);
+		Vector#(3, BIG_INT) packet_out =?;
+    
+    if(e == 0)begin
       doneFIFO.enq(0);
-      $display("finished %X", c); 
       state <= Idle;
     end else begin
       if(e[0] == 1) begin
-        Vector#(3, BIG_INT) packet_out =?;
         packet_out[0] = b;
         packet_out[1] = c;
         packet_out[2] = m;
-        modmult.putData(packet_out);
+        modmult1.putData(packet_out);
       end
-      state <= PutMult2;
+      
+        packet_out[0] = b;
+        packet_out[1] = b;
+        packet_out[2] = m;
+        modmult0.putData(packet_out);
+      state <= GetMult;
     end
   endrule
   
-  rule doPutMult2 (state==PutMult2);
+
+  rule getMult (state == GetMult);
     if(e[0] == 1) begin
-      let x <- modmult.getResult();
-      c <= x;
+	    let c_in <- modmult1.getResult();
+	    c <= c_in;
     end
-    Vector#(3, BIG_INT) packet_out=?;
-    packet_out[0] = b;
-    packet_out[1] = b;
-    packet_out[2] = m;
-    modmult.putData(packet_out);
-
-    state <= GetMult;
-
-  endrule
-
-  rule doGetMult (state == GetMult);
-    let x <- modmult.getResult();
-    b <= x;
     
+    let b_in <- modmult0.getResult();
+    b <= b_in;
+  	
     e <= e >> 1;
-    state <= PutMult1;
+    state <= PutMult;
   endrule
 
  
     method Action start();
 		    c <= 1;
-		    state <= PutMult1;
+		    state <= PutMult;
     endmethod
 
     method ActionValue#(BIG_INT) getResult();
