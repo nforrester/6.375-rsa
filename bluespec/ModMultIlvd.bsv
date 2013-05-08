@@ -3,9 +3,32 @@ import ClientServer::*;
 import GetPut::*;
 import FIFO::*;
 import Vector::*;
-//import PipelineAdder::*;
-//import CLAdder::*;
+import PipelineAdder::*;
+import CLAdder::*;
 import SlowClkAdder::*;
+
+module mkAdder(Adder);
+// Adder adder <- mkSlowClkAdder();
+// 	Adder adder <- mkCLAdder();
+//	Adder adder <- mkSimpleAdder();
+	Adder adder <- mkPipelineAdder();
+    interface Put request = adder.request;
+    interface Get response = adder.response;
+endmodule
+
+module mkSubtracter(Adder);
+//  Adder adder <- mkSlowClkAdder();
+//	Adder adder <- mkCLAdder();
+//	Adder adder <- mkSimpleAdder();
+	Adder adder <- mkPipelineAdder();
+    interface Put request;
+      method Action put(AdderOperands x);
+        adder.request.put(AdderOperands{a:x.a, b:~x.b, c_in:1});
+      endmethod
+    endinterface
+    interface Get response = adder.response;
+endmodule
+
 
 
 typedef enum {Shift, XiY, AddPI, PsubM1, PsubM2, PsubM3,  Done} State deriving (Bits,Eq);
@@ -29,23 +52,18 @@ module mkModMultIlvd(ModMultIlvd);
   Reg#(Maybe#(Bit#(0))) wait_for_add <- mkReg(tagged Invalid);
   Reg#(Maybe#(Bit#(0))) wait_for_sub1 <- mkReg(tagged Invalid);
   Reg#(Maybe#(Bit#(0))) wait_for_sub2 <- mkReg(tagged Invalid);
+  Adder adder <- mkAdder();
+  Adder subtracter <- mkSubtracter();
 
-  Adder adder <- mkSlowClkAdder();
-//	Adder adder <- mkCLAdder();
-//	Adder adder <- mkSimpleAdder();
-//	Adder adder <- mkPipelineAdder();
 
   Reg#(Bool) hack <- mkReg(False);
   
   rule init(!hack);
-    //$display("hack fix zeros");
       hack <= True;
       i <= fromInteger(valueof(BI_SIZE))-1;
       p_val <= 0;
       wait_for_add <= tagged Invalid;
       state <= Shift;
-   //   let in = inputFIFO.first();
-   //   x_val <= in[0];
       let in = inputFIFO.first();
       let x_temp = in[0];
       BIG_INT x_out = ?;
@@ -57,27 +75,24 @@ module mkModMultIlvd(ModMultIlvd);
   endrule
  
   rule doShift (state == Shift  && hack);
-    //$display("mod mult function i = %d", i);
     let next_p = p_val << 1;
     p_val <= next_p;
     state <= XiY;
- //   $display("doShift\t\tP = %d", next_p);
   endrule
 
   rule doXiY (state == XiY);
     let in = inputFIFO.first();
-   // let x_val = in[0];
     let y_val = in[1];
-      let x_tmp = in[0]; 
-      let next_p = ?;
+    let x_tmp = in[0]; 
+    let next_p = ?;
      
-      if(x_tmp[i] == 1)begin
+    if(x_tmp[i] == 1)begin
       	// Pack the add request
-    	  let operands = 	AdderOperands{a:p_val, b:y_val, do_sub:False};
+    	  let operands = 	AdderOperands{a:p_val, b:y_val, c_in:0};
         adder.request.put(operands);
         wait_for_add <= tagged Valid 0;
         end
-      else begin
+    else begin
         next_p = p_val;
         end
         
@@ -101,13 +116,9 @@ module mkModMultIlvd(ModMultIlvd);
     
     if (p_val_result >= m_val) begin
       // pack the sub request
-      let operands = 	AdderOperands{a:p_val_result, b:m_val, do_sub:True};
-      //operands[0] = p_val_result;
-      //operands[1] = m_val;
-      adder.request.put(operands);
+      let operands = 	AdderOperands{a:p_val_result, b:m_val, c_in:1};
+      subtracter.request.put(operands);
       wait_for_sub1 <= tagged Valid 0;
-      
-      //p_val <= p_val_result - m_val;
     end
     
     else begin
@@ -115,49 +126,40 @@ module mkModMultIlvd(ModMultIlvd);
     end
     
     state <= PsubM2;
-    //$display("doPSubM1\t\tp = %d", next_p);
   endrule
 
 
 
 
   rule doPSubM2 (state == PsubM2);
-//  $display("doSub2");
     let in = inputFIFO.first();
     let m_val = in[2];  
     let p_val_result = ?;
     if(isValid(wait_for_sub1))begin
       wait_for_sub1 <= tagged Invalid;
-      p_val_result <- adder.response.get();
+      p_val_result <- subtracter.response.get();
       end
     else begin
       p_val_result = p_val;
     end
 
     if (p_val_result >= m_val) begin
-    //  p_val_result = p_val_result - m_val;
-      
-      let operands = 	AdderOperands{a:p_val_result, b:m_val, do_sub:True};
-      adder.request.put(operands);
+      let operands = 	AdderOperands{a:p_val_result, b:m_val, c_in:1};
+      subtracter.request.put(operands);
       wait_for_sub2 <= tagged Valid 0;
     end
 
     p_val <= p_val_result;
-  
-
     state <= PsubM3;
-
 	endrule
 	
   rule doPSubM3(state == PsubM3);
-  if(isValid(wait_for_sub2))begin
-//    $display("do sub 3 i = %d", i);
-    let x <- adder.response.get();
-    p_val <= x;
-    wait_for_sub2 <= tagged Invalid;
-  end
-
-   i <= i -1;
+    if(isValid(wait_for_sub2))begin
+      let x <- subtracter.response.get();
+      p_val <= x;
+      wait_for_sub2 <= tagged Invalid;
+    end
+    i <= i -1;
     if(i==0)begin
       state <= Done;
     end
@@ -165,14 +167,10 @@ module mkModMultIlvd(ModMultIlvd);
       state <= Shift;
     end
 
-
-
-
   endrule
 
   rule doComplete (state == Done);
-  let in = inputFIFO.first();
-  //%display("%d * %d mod %d = %d",in[0], in[1], in[2], p_val);
+    let in = inputFIFO.first();
     inputFIFO.deq();
     outputFIFO.enq(p_val);
     p_val <= 0;

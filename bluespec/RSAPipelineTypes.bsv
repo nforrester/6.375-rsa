@@ -1,7 +1,9 @@
 import GetPut::*;
+import ClientServer::*;
 
-typedef 1032 BI_SIZE;
-typedef 1032 NUM_BITS_IN_CHUNK;
+//typedef 1032 BI_SIZE;
+typedef 520 BI_SIZE;
+//typedef 1032 NUM_BITS_IN_CHUNK;
 
 //typedef 1024 RSA_SIZE;
 typedef Bit#(BI_SIZE) BIG_INT;
@@ -18,8 +20,13 @@ typedef TDiv#(BI_SIZE, ADD_STAGES) ADD_WIDTH;
 typedef struct {
   BIG_INT a;
   BIG_INT b;
-  Bool do_sub;
+  Bit#(1) c_in;
 } AdderOperands deriving (Bits, Eq);
+
+typedef Server#(
+  AdderOperands,
+  BIG_INT
+) Adder;
 
 
 // Memory Types

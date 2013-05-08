@@ -7,12 +7,12 @@ import FIFOF::*;
 import BRAMFIFO::*;
 import Vector::*;
 import Randomizable::*;
-
+/*
 typedef Server#(
   AdderOperands,
   BIG_INT
 ) Adder;
-
+*/
 
 /* Performs 
    
@@ -36,7 +36,7 @@ typedef Server#(
 typedef enum {Add, Done} State deriving (Bits, Eq);
 
 
-module mkSimpleAdder(Adder);
+/*module mkSimpleAdder(Adder);
 	FIFOF#(AdderOperands) inputFIFO <- mkFIFOF();
   FIFO#(BIG_INT) outputFIFO <- mkFIFO();
 
@@ -60,7 +60,7 @@ module mkSimpleAdder(Adder);
   interface Get response = toGet(outputFIFO);
 
 endmodule
-
+*/
 
 module mkPipelineAdder(Adder);
 
@@ -87,15 +87,18 @@ module mkPipelineAdder(Adder);
 	Reg#(Int#(TAdd#(TLog#(BI_SIZE), 1))) idx_lo <- mkReg(0);
 	Reg#(Int#(TAdd#(TLog#(BI_SIZE), 1))) idx_hi <- mkReg(fromInteger(valueOf(ADD_WIDTH)) - 1);	
 	Vector#(ADD_STAGES, Reg#(Bit#(ADD_WIDTH))) result <- replicateM(mkReg(0));
+  Reg#(Bit#(1)) carry  <- mkReg(0);
 
 	rule calculate(state == Add);
     let a = inputFIFO.first().a;
   	let b = inputFIFO.first().b;
-  	let sub = inputFIFO.first().do_sub; // This is okay: BSV will clip extra bits
+    let c_in = (add_stage == 0) ? inputFIFO.first().c_in : carry;
+  
+    //let sub = inputFIFO.first().do_sub; // This is okay: BSV will clip extra bits
  		
  		// If we're subtracting, flip the negative value and add 1
-  	let c_in = (sub && add_stage == 0) ? 1 : 0;
-  	b = sub ? ~b : b;
+  	//let c_in = (sub && add_stage == 0) ? 1 : 0;
+  	//b = sub ? ~b : b;
 
 		// Need this width for the bit select multiplier
 		Int#(TAdd#(TLog#(BI_SIZE), 1)) add_width = fromInteger(valueOf(ADD_WIDTH));
@@ -108,9 +111,9 @@ module mkPipelineAdder(Adder);
 		idx_hi <= idx_hi + add_width;
 				
 		// Perform an addition, carrying in the carry bit from last cycle, and the external carry in
-	 	let cs_in = a_chunk + b_chunk  + zeroExtend(cs[add_width]) + c_in;
+	 	let cs_in = a_chunk + b_chunk  + zeroExtend(c_in) ; //zeroExtend(cs[add_width]) + c_in;
 		cs <= cs_in;
-		
+	  carry <= cs_in[valueof(ADD_WIDTH)];	
 		// Store the result in the output buffer
 		result[add_stage] <= truncate(cs_in); 
 
@@ -168,10 +171,10 @@ module mkAddTest (Empty);
       
       if(a > b) begin 
       	sim_result <= a - b;
-      	adder.request.put(AdderOperands{a:a, b:b, do_sub:True});
+      	adder.request.put(AdderOperands{a:a, b:~b, c_in:1});
     	end else begin
     		sim_result <= b - a;
-      	adder.request.put(AdderOperands{a:b, b:a, do_sub:True});
+      	adder.request.put(AdderOperands{a:b, b:~a, c_in:1});
     	end
       //$display("%b\n+\n%b", operands[0], operands[1]);
     endrule

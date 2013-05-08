@@ -7,7 +7,7 @@ import Vector::*;
 
 typedef 4 ADDER_SIZE;
 
-typedef struct {
+/*typedef struct {
   BIG_INT a;
   BIG_INT b;
   Bool do_sub;
@@ -17,6 +17,7 @@ typedef Server#(
   AdderOperands,
   BIG_INT
 ) Adder;
+*/
 
 typedef struct {
   Bit#(adder_size) a;
@@ -56,16 +57,10 @@ module mkSimpleAdder(Adder);
 	FIFOF#(AdderOperands) inputFIFO <- mkFIFOF();
   FIFO#(BIG_INT) outputFIFO <- mkFIFO();
 
-  rule doAddORSub;
+  rule doAdd;
     let in = inputFIFO.first();
     inputFIFO.deq();
-    let res = ?;
-
-    if(in.do_sub)begin
-      res = in.a - in.b;
-    end else begin
-      res = in.a + in.b;
-    end
+    let res = in.a + in.b + zeroExtend(in.c_in);
     outputFIFO.enq(res);
   endrule
 
@@ -123,11 +118,7 @@ module mkCLAdder(Adder);
   
   interface Put request;
     method Action put(AdderOperands x);
-      if(x.do_sub)begin
-        adder.request.put(AdderIn{a:x.a, b:~x.b, c_in:1});
-      end else begin
-        adder.request.put(AdderIn{a:x.a, b:x.b, c_in:0});
-        end
+        adder.request.put(AdderIn{a:x.a, b:x.b, c_in:x.c_in});
     endmethod
   endinterface
 

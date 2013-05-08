@@ -5,7 +5,7 @@ import FIFO::*;
 import FIFOF::*;
 import Vector::*;
 import Clocks::*;
-
+/*
 typedef struct {
   BIG_INT a;
   BIG_INT b;
@@ -16,7 +16,7 @@ typedef Server#(
   AdderOperands,
   BIG_INT
 ) Adder;
-
+*/
 /* Performs 
    
    result = a + b
@@ -42,13 +42,13 @@ module mkWrappedAdder(Clocks::ClockDividerIfc clk, Reset rst, Adder ifc);
   rule doAddORSub;
     let in = inputFIFO.first();
     inputFIFO.deq();
-    let res = ?;
+    let res = in.a + in.b + zeroExtend(in.c_in);
 
-    if(in.do_sub)begin
+    /*if(in.do_sub)begin
       res = in.a - in.b;
     end else begin
       res = in.a + in.b;
-    end
+    end*/
     outputFIFO.enq(res);
   endrule
 
