@@ -10,10 +10,10 @@ import BRAMFIFO::*;
 import Vector::*;
 
 
-typedef Server#(
-  Vector#(3, BIG_INT),  // changed this to hardcoded 3 since the algo is hardcoded
-  BIG_INT
-) ModExpt;
+interface ModExpt;
+    method Action putData(Vector#(3, BIG_INT) data);
+    method ActionValue#(BIG_INT) getResult();
+endinterface
 
 
 /* Performs 
@@ -40,109 +40,74 @@ typedef Server#(
 */
 
 
-typedef enum {PutMult, GetMult, Done} State deriving (Bits, Eq);
+typedef enum {Start, PutMult1, PutMult2, GetMult} State deriving (Bits, Eq);
 
 
 module mkModExpt(ModExpt);
-  FIFOF#(Vector#(3, BIG_INT)) inputFIFO <- mkSizedBRAMFIFOF(1);
-  FIFO#(BIG_INT) outputFIFO <- mkSizedBRAMFIFO(1);
+  FIFO#(Bit#(1)) doneFIFO <- mkSizedFIFO(1);
   
-  Reg#(BIG_INT) b <- mkReg(0);
-	Reg#(BIG_INT) e <- mkReg(0);
-	Reg#(BIG_INT) c <- mkReg(0);
-	Reg#(BIG_INT) m <- mkReg(0);
+  Reg#(BIG_INT) b <- mkRegU;
+	Reg#(BIG_INT) e <- mkRegU;
+	Reg#(BIG_INT) c <- mkRegU;
+	Reg#(BIG_INT) m <- mkRegU;
 
+	ModMultIlvd modmult <- mkModMultIlvd();
 
-	ModExpt modmult0 <- mkModMultIlvd();
-	ModExpt modmult1 <- mkModMultIlvd();
+  Reg#(State) state <- mkReg(Start);
 
-
-  Reg#(State) state <- mkReg(Done);
-	Reg#(Bool) hack <-mkReg(False);
-
-  rule init(!hack);
-    hack <= True;
-    b <= 0;
-    e <= 0;
-    c <= 0;
-    m <= 0;
-    state <= Done;
-  endrule
-
-	rule start(hack&& state == Done);
-   // $display("modExpt \t\t Start");
-    let packet_in = inputFIFO.first();
-    inputFIFO.deq();
-  
-    b <= packet_in[0];
-    e <= packet_in[1];
-    m <= packet_in[2];
-    c <= 1;
-
-
-    state <= PutMult;
-	endrule
-
-
-	rule putMult(state == PutMult);
- //   $display("modExpt \t\t PutMult");
-    Vector#(3, BIG_INT) packet_out = ?;
-		if(e == 0) begin
-			outputFIFO.enq(c);
-      state <= Done;
-		end else begin
-      if((e & fromInteger(1)) == fromInteger(1)) begin
+  rule doPutMult1 (state==PutMult1);
+    if(e==0)begin
+      doneFIFO.enq(0);
+      state <= Start;
+    end else begin
+      if(e[0] == 1) begin
+        Vector#(3, BIG_INT) packet_out =?;
         packet_out[0] = b;
         packet_out[1] = c;
         packet_out[2] = m;
-        modmult1.request.put(packet_out);
+        modmult.request.put(packet_out);
       end
-      packet_out[0] = b;
-      packet_out[1] = b;
-      packet_out[2] = m;
-      modmult0.request.put(packet_out);
-
-
-      state <= GetMult;
+      state <= PutMult2;
     end
-	endrule
+  endrule
+  
+  rule doPutMult2 (state==PutMult2);
+    if(e[0] == 1) begin
+      let x <- modmult.response.get();
+      c <= x;
+    end
+    Vector#(3, BIG_INT) packet_out=?;
+    packet_out[0] = b;
+    packet_out[1] = b;
+    packet_out[2] = m;
+    modmult.request.put(packet_out);
 
+    state <= GetMult;
 
-	rule getMult(state == GetMult);
-		let next_c = ?;
-    let next_b = ?;
-    let next_e = ?;
+  endrule
 
-
-    if((e & fromInteger(1)) == fromInteger(1)) begin
-			BIG_INT r1 <- modmult1.response.get();
-      next_c = r1;
-			c <= r1;
-		end
-    else next_c = c;
-
-
-		BIG_INT r0 <- modmult0.response.get();
-		b <= r0;
-    next_b = r0;
-
-
-		e <= e >>1;
-    next_e = e >> 1;
-
-
+  rule doGetMult (state == GetMult);
+    let x <- modmult.response.get();
+    b <= x;
     
- //   $display("modExpt \t\t GetMult\t\tb=%d\tc=%d\te=%d",next_b,next_c,next_e);
-    state <= PutMult;
-	endrule
+    e <= e >> 1;
+    state <= PutMult1;
+  endrule
 
+ 
+    method Action putData(Vector#(3, BIG_INT) data);
+		    b <= data[0];
+		    e <= data[1];
+		    m <= data[2];
+		    c <= 1;
+		    state <= PutMult1;
+    endmethod
 
-  interface Put request = toPut(inputFIFO);
-  interface Get response = toGet(outputFIFO);
+    method ActionValue#(BIG_INT) getResult();
+        doneFIFO.deq();
+        return e;
+    endmethod
 endmodule
 
 
-module mkModExptTest (Empty);
-  // some unit test
-endmodule
 

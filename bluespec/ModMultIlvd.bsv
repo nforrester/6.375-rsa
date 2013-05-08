@@ -3,11 +3,8 @@ import ClientServer::*;
 import GetPut::*;
 import FIFO::*;
 import Vector::*;
-import BRAMFIFO::*;
 import PipelineAdder::*;
 //import CLAdder::*;
-
-
 
 
 typedef enum {Shift, XiY, AddPI, PsubM1, PsubM2, PsubM3,  Done} State deriving (Bits,Eq);
@@ -22,8 +19,8 @@ typedef Server#(
 // [0] = X, [1] = Y, [2]= M
 // Get: Of type  FIFO#(BIG_INT)
 module mkModMultIlvd(ModMultIlvd);
-  FIFO#(Vector#(3, BIG_INT)) inputFIFO <- mkSizedBRAMFIFO(1);
-  FIFO#(BIG_INT) outputFIFO <- mkSizedBRAMFIFO(1);
+  FIFO#(Vector#(3, BIG_INT)) inputFIFO <- mkSizedFIFO(1);
+  FIFO#(BIG_INT) outputFIFO <- mkSizedFIFO(1);
   Reg#(Bit#(32)) i <- mkReg(0);
   Reg#(BIG_INT) p_val <- mkReg(0);
   Reg#(BIG_INT) x_val <- mkRegU;
@@ -32,8 +29,10 @@ module mkModMultIlvd(ModMultIlvd);
   Reg#(Maybe#(Bit#(0))) wait_for_add <- mkReg(tagged Invalid);
   Reg#(Maybe#(Bit#(0))) wait_for_sub1 <- mkReg(tagged Invalid);
   Reg#(Maybe#(Bit#(0))) wait_for_sub2 <- mkReg(tagged Invalid);
+
 //	Adder adder <- mkCLAdder();
 	Adder adder <- mkPipelineAdder();
+
   Reg#(Bool) hack <- mkReg(False);
   
   rule init(!hack);
@@ -53,7 +52,6 @@ module mkModMultIlvd(ModMultIlvd);
       end
       x_val <= x_out; 
 
-
   endrule
  
   rule doShift (state == Shift  && hack);
@@ -63,7 +61,6 @@ module mkModMultIlvd(ModMultIlvd);
     state <= XiY;
  //   $display("doShift\t\tP = %d", next_p);
   endrule
-
 
   rule doXiY (state == XiY);
     let in = inputFIFO.first();
@@ -135,7 +132,6 @@ module mkModMultIlvd(ModMultIlvd);
       p_val_result = p_val;
     end
 
-
     if (p_val_result >= m_val) begin
     //  p_val_result = p_val_result - m_val;
       
@@ -144,19 +140,13 @@ module mkModMultIlvd(ModMultIlvd);
       wait_for_sub2 <= tagged Valid 0;
     end
 
-
     p_val <= p_val_result;
   
 
-
     state <= PsubM3;
 
-
-
-
-  endrule
-
-
+	endrule
+	
   rule doPSubM3(state == PsubM3);
   if(isValid(wait_for_sub2))begin
 //    $display("do sub 3 i = %d", i);
@@ -179,9 +169,6 @@ module mkModMultIlvd(ModMultIlvd);
 
   endrule
 
-
-
-
   rule doComplete (state == Done);
   let in = inputFIFO.first();
   //%display("%d * %d mod %d = %d",in[0], in[1], in[2], p_val);
@@ -191,8 +178,6 @@ module mkModMultIlvd(ModMultIlvd);
     i <= fromInteger(valueof(BI_SIZE))-1;
     state <= Shift;
   endrule
-
-
    
   interface Put request = toPut(inputFIFO);
   interface Get response = toGet(outputFIFO);

@@ -59,7 +59,7 @@ module mkRSA (RSAServer);
     		$display("Done loading\nData %X", packet[0]);
     		$display("Mod %X", packet[2]);
     		$display("Exponent %X", packet[1]);
-    		modexpt.request.put(packet);
+    		modexpt.putData(packet);
     		
     		// Allow further loads
     		i <= 0;
@@ -68,7 +68,7 @@ module mkRSA (RSAServer);
   	endrule
   	
   	rule getExpt(state == GetExpt);
-  		  let r <- modexpt.response.get();
+  		  let r <- modexpt.getResult();
   			outfifo.enq(r);
   			i <= 0;
   			state <= Idle;

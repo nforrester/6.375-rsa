@@ -1,6 +1,6 @@
 import GetPut::*;
 
-typedef 1032 BI_SIZE;
+typedef 520 BI_SIZE;
 typedef Bit#(BI_SIZE) BIG_INT;
 
 // SceMi Types
@@ -9,7 +9,7 @@ typedef Bit#(RSA_PACKET_SIZE) RSA_PACKET;
 typedef TDiv#(BI_SIZE, 8) PACKET_COUNT;
 
 // Adder types
-typedef 3 ADD_STAGES; // MUST BE DIVISIBLE INTO BI_SIZE
+typedef 2 ADD_STAGES; // MUST BE DIVISIBLE INTO BI_SIZE
 typedef TDiv#(BI_SIZE, ADD_STAGES) ADD_WIDTH;
 
 typedef struct {
