@@ -112,24 +112,98 @@ Also, $x_i$ is the $i$th bit of $x$.
 \EndWhile
 \State $p$ is the result of the algorithm.
 \end{algorithmic}
-\chapter*{High-Level Design and Test Plan} Describe your system at a high level. What components are
-running in software, what in hardware, and how do they interact? What are the inputs and
-outputs to the system? How is the system used? How do you test the system? Include system
-diagrams.
+\chapter*{High-Level Design and Test Plan} 
+%Describe your system at a high level. What components are running in software, what in hardware, and how do they interact? What are the inputs and outputs to the system? How is the system used? How do you test the system? Include system diagrams.
+Our RSA module has three inputs: data, exponent, and modulus; this is because the only difference between implementing encryption versus decryption is the inputs to our RSA unit.  For example, to encrypt a plain text message the input to our RSA unit is the message, the public key and its modulus (in this case the "data" is the plain text message and the "exponent" is the public key). The output of this unit is the encrypted ciphertext.  Alternatively, to decrypt the cipher text, the input to our RSA unit is the ciphertext, the private key and its modulus.  Figure bla represents the high level design of our RSA unit.  In our implementation, all bit lengths are 1024 bits long and the input and output to the FPGA is implemented using the SceMi test bench.
+
+ 
+
+To verify the functionality of the RSA module, we compared the results of the encryption and decryption blocks to the results
+of a software implementation. The two private keys for encryption and
+decryption modules are passed by SceMi into the hardware. A SceMi testbench
+pushes a message to the encryption block, along with an enable signal, message,
+and public key of the software test-bench. The module generates an encrypted message,
+and the software test-bench uses its private key to decrypt and verify the 
+correctness of the encrypted message.
+
+For decryption, the process is reversed: the test-bench passes in an 
+encrypted message instead of plain-text, and the decryption module uses
+the private key of the software test-bench to decrypt the message. Then, the test-bench
+verifies the plain-text for correctness.
+
+
 %%%
-\chapter*{Microarchitectural Description} Describe the microarchitecture of your project. What are the
-component modules of your design and how do they interact? What significant design decisions
-led you to your microarchitecture?
+\chapter*{Microarchitectural Description} 
+%Describe the microarchitecture of your project. What are the component modules of your design and how do they interact? What significant design decisions led you to your microarchitecture?
+
+Our project is divided into two important modules: {\tt ModExpt.bsv} and {\tt ModMultIllvd.bsv}.
+\\
+{\tt ModExpt.bsv} performs modular exponentiation,
+while {\tt ModMultIllvd.bsv} performs modular multiplication using the interleaved modular multiplication algorithm described above.
+The modular exponentiator instantiates two modular multipliers.
+The high level diagram in Figure \ref{fig-top} depicts the interface between
+the modular multipliers and the modular exponentiator.
+
+\section{Implemented Modules}
+The modules we implemented are:  {\tt SceMiLayer.bsv, RSAPipeline.bsv, RSA.bsv, ModMultIlvd.bsv, ModExpt.bsv, PipelineAdder.bsv, CLAdder.bsv}
+
+\begin{description}
+  \item[SceMiLayer.bsv] We developed two SceMiLayer modules to test different types of designs: one for importing vmh files, and another for importing libgcrypt for simulating our c code.  
+
+  \item[RSAPipelinetypes.bsv] This is the general header file where we define all constant values.  This will make the overall product modular and easy for others to change core elements of design such as number of bits per chunk.
+  \item[RSA.bsv]This is a dedicated alternative driver for the RSA module that performs cosimulation with libgcrypt
+  \item[ModMultIlvd.bsv] The interleaved modulus multiplier based on the Montgomery Algorithm.  This function computes $a*b$ mod $m$.
+  \item[ModExpt.bsv] The modulus exponentiator implements the algorithm described above.  It creates two modulus multiplier to computer $b^e$ mod $m$.
+  \item[PipelineAdder, CLAdder.bsv] These modules implement a folded and carry look-ahead adders respectively. 
+\end{description}
+
+\subsection{Integer Representation Explorations}
+\begin{enumerate}
+\item The first interface was a simple {\tt Int\#(1024)} representation. We created a simple adder in order to synthesize our design.
+\item The second type of interface is most similar to our C implementation where integers are stored as 64 - 16 bit chunks.
+\item The third type of interface uses BRAM to store chunks of the integer throughout the implementation. (This is currently incomplete)
+\end{enumerate}
+\subsubsection{Difficulties Encountered}
+We created a simple adder in order to synthesize our design.  Since we had doubts about the success of this representation this was a vital step before continuing our design. Our concerns were well-founded for the simple {\tt Int\#(1024)} representation: the simple addition of two {\tt Int\#(1024)} were unable to synthesize.
 %%%
 \chapter*{Implementation Evaluation}
- What challenges or surprises did you face in implementing your
-design? Did you end up making changes to your original microarchitecture? Did you encounter
-any problems moving the design from simulation to the FPGA?
-Describe the results of your implementation. How many lines of Bluespec code did you have to
-write or modify? What existing IP blocks were you able to make use of in your design (DDR,
-dividers, etc...). What was the device utilization of your design, the clock frequency, and the
+ %What challenges or surprises did you face in implementing your
+%design? Did you end up making changes to your original microarchitecture? Did you encounter
+%any problems moving the design from simulation to the FPGA?
+%Describe the results of your implementation. How many lines of Bluespec code did you have to
+%write or modify? What existing IP blocks were you able to make use of in your design (DDR,
+%dividers, etc...). What was the device utilization of your design, the clock frequency, and the
+%high level throughput (frames per second, bits decoded per second, etc...). Did you meet your
+%initial project goals? Why or why not?
+
+\section{Challenges}
+Challenges: meeting timing and space constraints on the fpga. We made significant changes to our original microarchitecture to successfully meet our initial project goals.  
+ - we fixed timing by modifying the modular multiplication module and space modifying our modular exponentiation architecture.
+ 
+\subsection{Modular Exponentiation}
+blbabla write about space constraints and using one multiplier only
+include image of modexpt diagram
+\subsection{Interleaved Modular Multiplication}
+write about using 1 adder and 2 subtraction units. 
+To increase the cycle time we do 2 subtractions: p-m and p-2m and select the non negative result at the end.
+include diagram
+\subsection{Adder Implementation}
+Adder was on the critical path
+\subsubsection{Clader}
+\subsubsection{Multi-cycle Adder}
+existing ip blocks used: bram and +
+\subsubsection{Syncrhon}
+existing ip blocks used
+
+
+
+\section{Final Design Results: Space, Timing, and Throughput}
+What was the device utilization of your design, the clock frequency, and the
 high level throughput (frames per second, bits decoded per second, etc...). Did you meet your
 initial project goals? Why or why not?
+
+%%%
+
 %%%
 \chapter*{Design Exploration}
  Now that you have a working system, what trade-offs would you be interested
@@ -138,6 +212,5 @@ If you didn’t meet your performance targets, why? What are the limiting compon
 your design? A detailed analysis of the cycle latency and throughput of each component in
 your design may be appropriate. 
 
-\chapter*{Conclusion}
 
 \end{document}
