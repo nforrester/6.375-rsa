@@ -112,6 +112,12 @@ Also, $x_i$ is the $i$th bit of $x$.
 \EndWhile
 \State $p$ is the result of the algorithm.
 \end{algorithmic}
+
+\section{Implementation in C}
+We have a working implementation of all our algorithms in C, that we wrote from scratch and verified its correctness with libgcrypt.  
+The C implementation, of course, is unable to operate directly on 1024 bit integers, so we store them as arrays of 16 bit unsigned integers.
+As a result, performing bit shifts, additions, and comparisons
+takes somewhat more code than it would take to perform the corresponding operations in Bluespec.
 \chapter*{High-Level Design and Test Plan} 
 %Describe your system at a high level. What components are running in software, what in hardware, and how do they interact? What are the inputs and outputs to the system? How is the system used? How do you test the system? Include system diagrams.
 Our RSA module has three inputs: data, exponent, and modulus; this is because the only difference between implementing encryption versus decryption is the inputs to our RSA unit.  For example, to encrypt a plain text message the input to our RSA unit is the message, the public key and its modulus (in this case the "data" is the plain text message and the "exponent" is the public key). The output of this unit is the encrypted ciphertext.  Alternatively, to decrypt the cipher text, the input to our RSA unit is the ciphertext, the private key and its modulus.  Figure bla represents the high level design of our RSA unit.  In our implementation, all bit lengths are 1024 bits long and the input and output to the FPGA is implemented using the SceMi test bench.
@@ -132,6 +138,8 @@ the private key of the software test-bench to decrypt the message. Then, the tes
 verifies the plain-text for correctness.
 
 
+
+
 %%%
 \chapter*{Microarchitectural Description} 
 %Describe the microarchitecture of your project. What are the component modules of your design and how do they interact? What significant design decisions led you to your microarchitecture?
@@ -143,7 +151,50 @@ while {\tt ModMultIllvd.bsv} performs modular multiplication using the interleav
 The modular exponentiator instantiates two modular multipliers.
 The high level diagram in Figure \ref{fig-top} depicts the interface between
 the modular multipliers and the modular exponentiator.
+\begin{figure}
+  \begin{centering}
+    \includegraphics[scale=1]{top_level.png}
+    \caption{High level overview. Note that only one of two multipliers is depicted.}
+    \label{fig-top}
+  \end{centering}
+\end{figure}
 
+\subsection{Right to Left Binary Modular Exponentiator}
+The modular exponentiator is a circular pipeline (depicted in Figure \ref{fig-expt}).
+On each cycle of the pipeline it supplies inputs to the two multipliers.
+When the multipliers complete, it stores the results back into the registers.
+However one result is discarded if the low bit of {\tt e} is 0.
+In fact, our actual implementation will probably not invoke the multiplier
+if its result will be discarded anyway.
+However, this is simply an optimization, and doesn't hugely affect the overall plan.
+On every iteration, the value of {\tt e} is right-shifted by one bit.
+When {\tt e} is zero, the loop terminates.
+
+\begin{figure}
+  \begin{centering}
+    \includegraphics[width=\textwidth]{modexpt.png}
+    \caption{Modular exponentiation}
+    \label{fig-expt}
+  \end{centering}
+\end{figure}
+
+\subsection{Interleaved Modular Multiplier}
+The interleaved modular has the advantage of not requiring long multiplies, and works with
+only left shifts, addition, subtraction, and comparison. Unfortunately, a step of the 
+algorithm requires comparing the entire length of the data in the worst case. Additionally,
+there are 3 possible add/subtract steps at every step of the algorithm. Therefore, the propagation delay
+of each step of the algorithm is prohibitive without pipelining. The naive, unpipelined approach did 
+meet timing because of the long propagation delay through the adders.
+
+An overview of the module is pictured in Figure \ref{fig-inter}.
+
+\begin{figure}
+  \begin{centering}
+    \includegraphics[width=\textwidth]{modmult.png}
+    \caption{Interleaved modular multiplication}
+    \label{fig-inter}
+  \end{centering}
+\end{figure}
 \section{Implemented Modules}
 The modules we implemented are:  {\tt SceMiLayer.bsv, RSAPipeline.bsv, RSA.bsv, ModMultIlvd.bsv, ModExpt.bsv, PipelineAdder.bsv, CLAdder.bsv}
 
